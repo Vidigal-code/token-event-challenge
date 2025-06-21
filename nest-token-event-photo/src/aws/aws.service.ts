@@ -3,8 +3,10 @@ import { S3Client, ListBucketsCommand, HeadBucketCommand } from '@aws-sdk/client
 import { Logger } from '@nestjs/common';
 
 @Injectable()
-export class LocalstackService implements OnModuleInit {
-    private readonly logger = new Logger(LocalstackService.name);
+export class AwsService implements OnModuleInit {
+
+    private readonly logger = new Logger(AwsService.name);
+
     public s3Client: S3Client;
     public bucketName: string;
 

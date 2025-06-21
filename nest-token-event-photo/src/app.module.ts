@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ImageModule } from './image/image.module';
-import { LocalstackModule } from './localstack/localstack.module';
+import { ImageModule } from './image/modules/image.module';
+import { AwsModule } from './aws/aws.module';
 
 @Module({
     imports: [
@@ -12,7 +12,7 @@ import { LocalstackModule } from './localstack/localstack.module';
         }),
         MongooseModule.forRoot(process.env.MONGODB_URI),
         ImageModule,
-        LocalstackModule,
+        AwsModule,
     ],
 })
 export class AppModule {}

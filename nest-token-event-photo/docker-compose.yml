@@ -3,7 +3,7 @@ version: '3.8'
 services:
   localstack:
     image: localstack/localstack:3.8.1
-    container_name: localstack
+    container_name: aws
     ports:
       - "0.0.0.0:4566:4566"
     environment:
@@ -16,7 +16,7 @@ services:
       - .env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./entrypoint.sh:/etc/localstack/init/ready.d/entrypoint.sh:ro
+      - ./entrypoint.sh:/etc/aws/init/ready.d/entrypoint.sh:ro
     networks:
       - app-network
     healthcheck:
@@ -50,7 +50,7 @@ services:
     ports:
       - "0.0.0.0:3001:3001"
     environment:
-      - AWS_ENDPOINT_URL=http://localstack:4566
+      - AWS_ENDPOINT_URL=http://aws:4566
       - AWS_REGION=us-east-1
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
