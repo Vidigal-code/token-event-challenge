@@ -7,12 +7,12 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
   ],
-  server: {
+  /*server: {
     https: {
       key: fs.readFileSync(path.resolve(__dirname, 'ssl/192.168.0.13-key.pem')),
       cert: fs.readFileSync(path.resolve(__dirname, 'ssl/192.168.0.13.pem')),
     },
     host: '0.0.0.0',
     port: 3000,
-  },
+  },*/
 })

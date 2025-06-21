@@ -1,4 +1,4 @@
-import NexLabLogo from './NexLabLogo';
+import NexLabLogo from './NexLabLogo.tsx';
 
 interface InitialScreenProps {
     onStart: () => void;
