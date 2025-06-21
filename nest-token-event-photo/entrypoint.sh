@@ -3,7 +3,7 @@ set -e
 
 echo "[1/4] Waiting for LocalStack S3 service to be ready..."
 for i in {1..10}; do
-  if aws --endpoint-url=http://localhost:4566 s3api list-buckets >/dev/null 2>&1; then
+  if aws --endpoint-url=http://localstack:4566 s3api list-buckets >/dev/null 2>&1; then
     echo "LocalStack S3 service is ready."
     break
   else
@@ -23,10 +23,10 @@ aws configure set region us-east-1
 
 echo "[3/4] Creating S3 bucket 'image-bucket'..."
 for i in {1..10}; do
-  if aws --endpoint-url=http://localhost:4566 s3 mb s3://image-bucket 2>/dev/null; then
+  if aws --endpoint-url=http://localstack:4566 s3 mb s3://image-bucket 2>/dev/null; then
     echo "Bucket 'image-bucket' created successfully."
     break
-  elif aws --endpoint-url=http://localhost:4566 s3 ls s3://image-bucket >/dev/null 2>&1; then
+  elif aws --endpoint-url=http://localstack:4566 s3 ls s3://image-bucket >/dev/null 2>&1; then
     echo "Bucket 'image-bucket' already exists."
     break
   else
@@ -40,7 +40,7 @@ for i in {1..10}; do
 done
 
 echo "[4/4] Verifying bucket accessibility..."
-if aws --endpoint-url=http://localhost:4566 s3 ls s3://image-bucket; then
+if aws --endpoint-url=http://localstack:4566 s3 ls s3://image-bucket; then
   echo "Bucket 'image-bucket' is accessible."
 else
   echo "Failed to access bucket 'image-bucket'."
@@ -48,3 +48,7 @@ else
 fi
 
 echo "LocalStack setup complete."
+
+# Start the NestJS application
+echo "Starting NestJS application..."
+exec npm run start:dev

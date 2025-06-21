@@ -35,3 +35,5 @@ coverage/
 
 *.bak
 *.tmp
+ssl/fake-key.pem
+ssl/fake.pem

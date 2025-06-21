@@ -10,11 +10,11 @@ import { AwsModule } from '../../aws/aws.module';
  * Configures the controllers, services, and database schema for handling image save and retrieval operations.
  */
 @Module({
-    imports: [
-        MongooseModule.forFeature([{ name: Image.name, schema: ImageSchema }]),
-        AwsModule,
-    ],
-    controllers: [ImageController],
-    providers: [ImageService],
+  imports: [
+    MongooseModule.forFeature([{ name: Image.name, schema: ImageSchema }]),
+    AwsModule,
+  ],
+  controllers: [ImageController],
+  providers: [ImageService],
 })
 export class ImageModule {}

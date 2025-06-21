@@ -7,61 +7,61 @@ import { Document } from 'mongoose';
  */
 @Schema()
 export class Image {
-    /**
-     * Unique identifier for the image.
-     * Must be a non-empty string.
-     * @example "test-id"
-     */
-    @Prop({ required: true })
-    id: string;
+  /**
+   * Unique identifier for the image.
+   * Must be a non-empty string.
+   * @example "test-id"
+   */
+  @Prop({ required: true })
+  id: string;
 
-    /**
-     * QR code identifier associated with the image.
-     * Must be a non-empty string.
-     * @example "test-qr"
-     */
-    @Prop({ required: true })
-    qrCodeId: string;
+  /**
+   * QR code identifier associated with the image.
+   * Must be a non-empty string.
+   * @example "test-qr"
+   */
+  @Prop({ required: true })
+  qrCodeId: string;
 
-    /**
-     * Date the image was captured, in YYYY-MM-DD format.
-     * Must be a non-empty string.
-     * @example "2025-06-20"
-     */
-    @Prop({ required: true })
-    date: string;
+  /**
+   * Date the image was captured, in YYYY-MM-DD format.
+   * Must be a non-empty string.
+   * @example "2025-06-20"
+   */
+  @Prop({ required: true })
+  date: string;
 
-    /**
-     * Time the image was captured, in HH:mm:ss format.
-     * Must be a non-empty string.
-     * @example "23:00:00"
-     */
-    @Prop({ required: true })
-    time: string;
+  /**
+   * Time the image was captured, in HH:mm:ss format.
+   * Must be a non-empty string.
+   * @example "23:00:00"
+   */
+  @Prop({ required: true })
+  time: string;
 
-    /**
-     * Name of the S3 bucket where the image is stored.
-     * Must be a non-empty string.
-     * @example "image-bucket"
-     */
-    @Prop({ required: true })
-    s3Bucket: string;
+  /**
+   * Name of the S3 bucket where the image is stored.
+   * Must be a non-empty string.
+   * @example "image-bucket"
+   */
+  @Prop({ required: true })
+  s3Bucket: string;
 
-    /**
-     * S3 key (path) of the image in the bucket.
-     * Must be a non-empty string.
-     * @example "test-qr/<uuid>.png"
-     */
-    @Prop({ required: true })
-    s3Key: string;
+  /**
+   * S3 key (path) of the image in the bucket.
+   * Must be a non-empty string.
+   * @example "test-qr/<uuid>.png"
+   */
+  @Prop({ required: true })
+  s3Key: string;
 
-    /**
-     * User identifier associated with the image.
-     * Defaults to '0' if not provided.
-     * @example "user123"
-     */
-    @Prop({ default: '0' })
-    userId: string;
+  /**
+   * User identifier associated with the image.
+   * Defaults to '0' if not provided.
+   * @example "user123"
+   */
+  @Prop({ default: '0' })
+  userId: string;
 }
 
 /**

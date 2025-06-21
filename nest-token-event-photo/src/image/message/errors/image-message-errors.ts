@@ -1,5 +1,9 @@
 import { HttpStatus } from '@nestjs/common';
-import { BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 
 /**
  * Custom exception class for image-related operations.

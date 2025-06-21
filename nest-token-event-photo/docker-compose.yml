@@ -16,11 +16,10 @@ services:
       - .env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./entrypoint.sh:/etc/aws/init/ready.d/entrypoint.sh:ro
     networks:
       - app-network
     healthcheck:
-      test: [ "CMD", "aws", "--endpoint-url=http://localhost:4566", "s3api", "list-buckets" ]
+      test: ["CMD", "aws", "--endpoint-url=http://localhost:4566", "s3api", "list-buckets"]
       interval: 5s
       timeout: 10s
       retries: 30
@@ -35,12 +34,15 @@ services:
       - app-network
     volumes:
       - mongo_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    environment:
+      - MONGO_INITDB_DATABASE=nextlab
     healthcheck:
-      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 5s
       timeout: 10s
       retries: 10
-      start_period: 10s
+      start_period: 30s
 
   app:
     build:
@@ -50,11 +52,14 @@ services:
     ports:
       - "0.0.0.0:3001:3001"
     environment:
-      - AWS_ENDPOINT_URL=http://aws:4566
+      - AWS_ENDPOINT_URL=http://localstack:4566
       - AWS_REGION=us-east-1
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
-      - MONGO_URI=mongodb://mongodb:27017/myapp
+      - MONGODB_URI=mongodb://mongodb:27017/nextlab
+      - NODE_ENV=development
+      - PORT=3001
+      - HOST=0.0.0.0
     env_file:
       - .env
     depends_on:
