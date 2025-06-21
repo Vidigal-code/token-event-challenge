@@ -7,10 +7,10 @@ interface FinalScreenProps {
 }
 
 const FinalScreen = ({ photo, onFinalize }: FinalScreenProps) => {
-
     const qrRef = useRef<HTMLCanvasElement | null>(null);
 
-    const downloadUrl = useMemo(() => {
+
+    const qrCodeUrl = useMemo(() => {
         if (!photo) return '';
         const byteString = atob(photo.split(',')[1]);
         const mimeString = photo.split(',')[0].split(':')[1].split(';')[0];
@@ -24,10 +24,11 @@ const FinalScreen = ({ photo, onFinalize }: FinalScreenProps) => {
     }, [photo]);
 
     useEffect(() => {
+
         const timer = setTimeout(() => onFinalize(), 30000);
 
-        if (qrRef.current && downloadUrl) {
-            QRCode.toCanvas(qrRef.current, downloadUrl, {
+        if (qrRef.current && qrCodeUrl) {
+            QRCode.toCanvas(qrRef.current, qrCodeUrl, {
                 width: 150,
                 margin: 1,
                 color: { light: '#ffffffff', dark: '#000000ff' }
@@ -38,15 +39,19 @@ const FinalScreen = ({ photo, onFinalize }: FinalScreenProps) => {
 
         return () => {
             clearTimeout(timer);
-            if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+            if (qrCodeUrl) URL.revokeObjectURL(qrCodeUrl);
         };
-    }, [onFinalize, downloadUrl]);
+
+    }, [onFinalize, qrCodeUrl]);
+
 
     const handleDownload = () => {
         const link = document.createElement('a');
-        link.href = downloadUrl;
+        link.href = photo;
         link.download = 'nexlab-photo.png';
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
     };
 
     return (

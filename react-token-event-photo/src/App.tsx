@@ -52,7 +52,9 @@ const App = () => {
 
         setIsLoading(true);
 
-        console.log("Captured Base64 Image:", imageSrc.substring(0, 100) + "..."); // TEST 
+        //console.log("Captured Base64 Image:", imageSrc.substring(0, 100) + "..."); // TEST
+
+        console.log("Captured Base64 Image:", imageSrc); // TEST
 
         try {
             const context = canvasRef.current.getContext('2d');
