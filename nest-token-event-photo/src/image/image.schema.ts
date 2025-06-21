@@ -6,9 +6,6 @@ export class Image extends Document {
     @Prop({ required: true, unique: true })
     id: string;
 
-    @Prop({ required: true })
-    base64: string;
-
     @Prop({ required: true, unique: true })
     qrCodeId: string;
 

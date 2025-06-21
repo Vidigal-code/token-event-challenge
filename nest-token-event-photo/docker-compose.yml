@@ -2,10 +2,16 @@ version: '3.8'
 
 services:
   localstack:
-    image: localstack/localstack:latest
+    image: localstack/localstack:3.8.1
     container_name: localstack
     ports:
       - "4566:4566"
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+      - SERVICES=s3
+      - DEBUG=1
     env_file:
       - .env
     volumes:
@@ -13,17 +19,53 @@ services:
       - ./entrypoint.sh:/etc/localstack/init/ready.d/entrypoint.sh:ro
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "aws", "--endpoint-url=http://localhost:4566", "s3", "ls", "s3://image-bucket"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
 
   mongo:
     image: mongo:6.0
     container_name: mongodb
     ports:
       - "27017:27017"
-    networks:
-      - app-network
+    env_file:
+      - .env
     volumes:
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
       - mongo_data:/data/db
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 10s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nest-token-event-photo
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      localstack:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    networks:
+      - app-network
+    # ADDED volumes for hot-reloading in development
+    volumes:
+      - .:/app
+      - /app/node_modules
+    # REMOVED the 'command' line with the 'sleep 30'
 
 networks:
   app-network:

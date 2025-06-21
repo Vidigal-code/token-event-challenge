@@ -1,31 +1,14 @@
-FROM node:18-slim
+FROM node:18
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    unzip \
-    git \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Install AWS CLI version 2
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
-    unzip awscliv2.zip && \
-    ./aws/install && \
-    rm -rf awscliv2.zip aws
-
-# Set working directory
 WORKDIR /app
 
-# Copy package files and install dependencies
-COPY package.json package-lock.json* ./
-RUN npm ci --production
+# Copy package files and install dependencies first to leverage Docker cache
+COPY package*.json ./
+RUN npm install
 
-# Copy source files and build
+# Copy the rest of your application code
 COPY . .
-RUN npm run build
 
-# Expose port for NestJS
-EXPOSE 3000
-
-# Command to run the application
-CMD ["npm", "run", "start:prod"]
+# The command will be run when the container starts.
+# 'nest start --watch' is perfect for development.
+CMD ["npm", "run", "start:dev"]

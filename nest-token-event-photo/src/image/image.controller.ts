@@ -15,10 +15,6 @@ export class ImageController {
 
     @Get('qr/:qrCodeId')
     async getImageByQrCodeId(@Param('qrCodeId') qrCodeId: string) {
-        const image = await this.imageService.getImageByQrCodeId(qrCodeId);
-        if (!image) {
-            throw new HttpException('Image not found', HttpStatus.NOT_FOUND);
-        }
-        return { base64: image.base64 };
+        return this.imageService.getImageByQrCodeId(qrCodeId);
     }
 }
