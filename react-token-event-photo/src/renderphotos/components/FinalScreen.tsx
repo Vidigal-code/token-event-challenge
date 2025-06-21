@@ -22,8 +22,8 @@ const FinalScreen = ({photo, qrCodeId, onFinalize}: FinalScreenProps) => {
             console.error('qrCodeId is undefined');
             return '';
         }
-        const baseUrl = window.location.origin;
-        return `${baseUrl}/#/preview?qrCodeId=${qrCodeId}`;
+        //const baseUrl = window.location.origin;
+        return `http://192.168.0.13:3000/#/preview?qrCodeId=${qrCodeId}`;
     }, [qrCodeId]);
 
 

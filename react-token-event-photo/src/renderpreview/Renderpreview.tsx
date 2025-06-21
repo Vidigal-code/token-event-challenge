@@ -14,7 +14,7 @@ const Renderpreview = () => {
     };
 
     const qrCodeId = getQrCodeId();
-    const qrCodeUrl = qrCodeId ? `http://localhost:3000/image/qr/${qrCodeId}` : '';
+    const qrCodeUrl = qrCodeId ? `http://192.168.0.13:3001/image/qr/${qrCodeId}` : '';
 
     useEffect(() => {
         if (!qrCodeId) {
