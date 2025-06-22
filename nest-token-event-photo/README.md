@@ -187,7 +187,7 @@ The project includes a decoupled service for uploading and streaming images to a
 
 | Método / Method | Rota / Route          | Descrição / Description                                                                                                | Proteção / Protection |
 | :-------------- | :-------------------- | :--------------------------------------------------------------------------------------------------------------------- | :-------------------- |
-| `POST`          | `/image`              | 🇧🇷 Salva uma imagem (base64) no S3. <br/> 🇬🇧 Saves an image (base64) to S3.                                              | Público / Public      |
-| `GET`           | `/image/qr/:qrCodeId` | 🇧🇷 Recupera uma imagem pelo seu `qrCodeId` como um stream. <br/> 🇬🇧 Retrieves an image by its `qrCodeId` as a stream.        | Público / Public      |
+| `POST`          | `/image`              | 🇧🇷 Salva uma imagem (base64) no S3. <br/> 🇬🇧 Saves an image (base64) to S3.                                              | Público / Public     |
+| `GET`           | `/image/qr/:qrCodeId` | 🇧🇷 Recupera uma imagem pelo seu `qrCodeId` como um (base64: string;) <br/> 🇬🇧 Retrieves an image by its `qrCodeId` as a (base64: string;).      | Público / Public      |
 
 </details>
