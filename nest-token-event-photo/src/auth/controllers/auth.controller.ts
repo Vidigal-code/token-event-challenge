@@ -247,6 +247,37 @@ export class AuthController {
     };
   }
 
+
+  /**
+   * Generates and returns a CSRF (Cross-Site Request Forgery) token.
+   *
+   * This endpoint:
+   * - Generates a CSRF token using middleware (e.g., `csurf`)
+   * - Sets the token as an HTTP-only cookie on the client
+   * - Returns the token in the response body (useful for frontend clients)
+   *
+   * Cookie options:
+   * - `httpOnly`: prevents JavaScript access to the cookie
+   * - `secure`: only sends the cookie over HTTPS in production
+   * - `sameSite: 'strict'`: blocks the cookie from being sent with cross-site requests
+   *
+   * @param req - The HTTP request object containing the `csrfToken()` method
+   * @param res - The HTTP response object used to set the CSRF cookie
+   * @returns An object containing the generated CSRF token
+   */
+  @Get('csrf')
+  @HttpCode(HttpStatus.OK)
+  generateCsrfToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const csrfToken = req.csrfToken();
+    res.cookie('csrfToken', csrfToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
+    return { csrfToken };
+  }
+
+
   /**
    * Sets access and refresh tokens in HTTP-only cookies.
    * @param res - Express response object for setting cookies.

@@ -14,13 +14,15 @@ const ReviewScreen = ({ photo, onRetry, onApprove }: ReviewScreenProps) => {
             <div className="flex space-x-4">
                 <button
                     onClick={onRetry}
-                    className="px-8 py-3 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition"
+                    className="px-8 py-3 bg-gray-600 text-white
+                    font-semibold rounded-lg hover:bg-gray-700 transition"
                 >
                     Refazer
                 </button>
                 <button
                     onClick={onApprove}
-                    className="px-8 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition"
+                    className="px-8 py-3 bg-green-600 text-white
+                     font-semibold rounded-lg hover:bg-green-700 transition"
                 >
                     Aprovar
                 </button>

@@ -1,5 +1,6 @@
 import {useEffect, useRef, useMemo} from 'react';
 import QRCode from 'qrcode';
+import { API_BACK_END } from '../../api/api';
 
 /*interface FinalScreenProps {
     photo: string;
@@ -18,12 +19,16 @@ const FinalScreen = ({photo, qrCodeId, onFinalize}: FinalScreenProps) => {
     const qrRef = useRef<HTMLCanvasElement | null>(null);
 
     const qrCodeUrl = useMemo(() => {
+
         if (!qrCodeId) {
             console.error('qrCodeId is undefined');
             return '';
         }
+
         //const baseUrl = window.location.origin;
-        return `http://192.168.0.13:3000/#/preview?qrCodeId=${qrCodeId}`;
+
+        return `${API_BACK_END}/#/preview?qrCodeId=${qrCodeId}`;
+
     }, [qrCodeId]);
 
 

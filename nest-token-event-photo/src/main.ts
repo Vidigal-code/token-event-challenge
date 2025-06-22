@@ -62,32 +62,33 @@ async function bootstrap() {
     app = await NestFactory.create(AppModule);
   }
 
-  /**
-   * Configure CORS based on allowed origins (e.g., frontend and bridge connection).
-   */
-  const bridgeConnection = process.env.BRIDGE_CONNECTION
-      ? `http://${process.env.BRIDGE_CONNECTION}`
-      : undefined;
-  const allowedOrigins = [
-    bridgeConnection,
-    process.env.API_FRONT_END || 'http://localhost:3000',
-  ].filter(Boolean);
 
+
+  /**
+   * Enables Cross-Origin Resource Sharing (CORS) for the application.
+   *
+   * This configuration:
+   * - Allows requests from the frontend defined in the `API_FRONT_END` environment variable
+   * - Permits specific HTTP methods: GET, POST, OPTIONS, DELETE
+   * - Allows only specific headers: 'Content-Type' and 'X-CSRF-Token'
+   * - Enables credentials (cookies, authorization headers, etc.) to be sent in cross-origin requests
+   */
   app.enableCors({
-    origin: allowedOrigins,
-    methods: ['GET', 'POST', 'OPTIONS'],
+    origin: process.env.API_FRONT_END,
+    methods: ['GET', 'POST', 'OPTIONS', 'DELETE'],
     allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
-    credentials: true, // Allow cookies in cross-origin requests
+    credentials: true,
   });
+
 
   /**
    * Apply global validation and transformation for incoming requests.
    */
   app.useGlobalPipes(
       new ValidationPipe({
-        whitelist: true,              // Remove unknown properties
-        forbidNonWhitelisted: true,   // Throw error on unknown properties
-        transform: true,              // Auto-convert payloads to DTOs
+        whitelist: true, // Remove unknown properties
+        forbidNonWhitelisted: true, // Throw error on unknown properties
+        transform: true, // Auto-convert payloads to DTOs
       })
   );
 

@@ -28,7 +28,8 @@ const PreCaptureScreen = ({ webcamRef, onCapture }: PreCaptureScreenProps) => {
                 <button
                     onClick={onCapture}
                     aria-label="Capture photo"
-                    className="w-20 h-20 rounded-full bg-white ring-4 ring-white/30 transition-transform hover:scale-105 active:scale-95"
+                    className="w-20 h-20 rounded-full bg-white ring-4
+                    ring-white/30 transition-transform hover:scale-105 active:scale-95"
                 />
             </div>
         </div>
