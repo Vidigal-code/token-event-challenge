@@ -110,7 +110,7 @@ export class ImageController {
    */
   @Get('user')
   @Throttle({ default: { limit: 3, ttl: 300 } })
-  @Roles(Role.User)
+  @Roles(Role.User, Role.Admin)
   @UseGuards(RolesGuardService)
   async getUserImages(@Req() req: AuthenticatedRequest) {
     const images = await this.imageService.getImagesByUserId(req.user.sub);
