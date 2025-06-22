@@ -29,16 +29,19 @@ import { UpdatePasswordDto } from '../../users/dtos/update-password.dto';
 import { AuthMessageSuccess } from '../message/sucess/auth-message.sucess';
 import { CsrfMiddlewareError } from '../middlewares/csrf.middleware-message';
 
+/** Controller for handling authentication-related endpoints. */
 @Controller('auth')
 @UseInterceptors(SanitizeInputInterceptor)
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
+  /** Initializes the controller with AuthService and ConfigService dependencies. */
   constructor(
       private authService: AuthService,
       private configService: ConfigService
   ) {}
 
+  /** Handles user registration, creates a new user, sets tokens, and returns user details. */
   @Post('register')
   @Throttle({ default: { limit: 5, ttl: 300 } })
   async register(
@@ -62,6 +65,7 @@ export class AuthController {
     };
   }
 
+  /** Handles user login, validates credentials, sets tokens, and returns user details. */
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 300 } })
@@ -84,6 +88,7 @@ export class AuthController {
     };
   }
 
+  /** Refreshes access and refresh tokens using the provided refresh token. */
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60 } })
@@ -107,6 +112,7 @@ export class AuthController {
     };
   }
 
+  /** Handles user logout, invalidates refresh token, and clears cookies. */
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 60 } })
@@ -134,6 +140,7 @@ export class AuthController {
     return AuthMessageSuccess.LogoutSuccessful();
   }
 
+  /** Updates the user's password after validating the old password. */
   @Post('password')
   @HttpCode(HttpStatus.OK)
   @UseGuards(RolesGuardService)
@@ -165,6 +172,7 @@ export class AuthController {
     return AuthMessageSuccess.PasswordUpdated();
   }
 
+  /** Provides access to the admin panel for users with Admin role. */
   @Get('admin')
   @Roles(Role.Admin)
   @UseGuards(RolesGuardService)
@@ -175,6 +183,7 @@ export class AuthController {
     };
   }
 
+  /** Checks if the user is authenticated and returns their details. */
   @Get('check')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60 } })
@@ -186,6 +195,7 @@ export class AuthController {
     };
   }
 
+  /** Generates and returns a CSRF token, setting it in cookies. */
   @Get('csrf')
   @HttpCode(HttpStatus.OK)
   generateCsrfToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
@@ -205,6 +215,7 @@ export class AuthController {
     return { csrfToken };
   }
 
+  /** Sets access and refresh tokens in cookies with appropriate security settings. */
   private setTokens(res: Response, accessToken: string, refreshToken: string) {
     const isProduction = this.configService.get('NODE_ENV') === 'production';
     const accessTokenExpiry =

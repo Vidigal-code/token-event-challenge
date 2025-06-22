@@ -23,4 +23,6 @@ export const ROLES_KEY = 'roles';
  * @param roles List of roles permitted to access the route
  * @returns A decorator function setting roles metadata
  */
-export const Roles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);
+export const Roles
+    = (...roles: string[]) =>
+    SetMetadata(ROLES_KEY, roles);

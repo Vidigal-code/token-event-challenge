@@ -35,7 +35,8 @@ export class ImageMessageException {
 
   /**
    * Creates an exception for an invalid date or time format.
-   * @returns A BadRequestException with a message indicating the expected formats (YYYY-MM-DD for date, HH:mm:ss for time).
+   * @returns A BadRequestException with a message indicating the expected formats (YYYY-MM-DD for date,
+   * HH:mm:ss for time).
    */
   static InvalidDateOrTime() {
     return new BadRequestException({

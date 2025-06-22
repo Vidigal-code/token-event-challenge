@@ -6,11 +6,13 @@ import { JwtService } from '@nestjs/jwt';
 import { randomBytes } from 'crypto';
 import { CsrfMiddlewareError } from './csrf.middleware-message';
 
+/** Middleware for implementing CSRF protection. */
 @Injectable()
 export class CsrfMiddleware implements NestMiddleware {
   private readonly logger = new Logger(CsrfMiddleware.name);
   private readonly csrfProtection;
 
+  /** Initializes the middleware with ConfigService and JwtService, setting up CSRF protection with doubleCsrf. */
   constructor(
       private configService: ConfigService,
       private jwtService: JwtService
@@ -19,6 +21,7 @@ export class CsrfMiddleware implements NestMiddleware {
         this.configService.get<string>('NODE_ENV') === 'production';
     const csrfSecret = this.configService.get<string>('CSRF_SECRET');
 
+    /** Validates the CSRF_SECRET configuration. */
     if (!csrfSecret || csrfSecret.length < 32) {
       this.logger.error('CSRF_SECRET is missing or too short (< 32 chars)');
       throw new CsrfMiddlewareError(
@@ -31,6 +34,7 @@ export class CsrfMiddleware implements NestMiddleware {
         `CSRF Config: production=${isProduction}, secretLength=${csrfSecret.length}`
     );
 
+    /** Configures CSRF protection settings, including token extraction and session identification. */
     const csrfConfig: DoubleCsrfConfigOptions = {
       getSecret: () => csrfSecret,
       cookieName: 'csrfToken',
@@ -69,6 +73,7 @@ export class CsrfMiddleware implements NestMiddleware {
       },
     };
 
+    /** Initializes CSRF protection with the provided configuration. */
     try {
       const { doubleCsrfProtection, generateCsrfToken } =
           doubleCsrf(csrfConfig);
@@ -84,9 +89,11 @@ export class CsrfMiddleware implements NestMiddleware {
     }
   }
 
+  /** Applies CSRF protection to incoming requests, generating tokens and validating them. */
   use(req: Request, res: Response, next: NextFunction) {
     try {
       this.logger.debug(`Processing CSRF for path: ${req.path}`);
+      /** Sets a session ID cookie for unauthenticated users if none exists. */
       if (
           !req.cookies?.accessToken &&
           !req.cookies?.refreshToken &&
@@ -103,14 +110,17 @@ export class CsrfMiddleware implements NestMiddleware {
         this.logger.debug(`Set sessionId cookie: ${newSessionId}`);
       }
 
+      /** Generates a CSRF token and stores it in res.locals. */
       const csrfToken = this.csrfProtection.generateCsrfToken(req, res);
       if (!csrfToken) {
-        this.logger.error(`Failed to generate CSRF token; path=${req.path}, cookies=${JSON.stringify(req.cookies)}`);
+        this.logger.error(`Failed to generate CSRF token; path=${req.path}, 
+        cookies=${JSON.stringify(req.cookies)}`);
         throw new CsrfMiddlewareError('CSRF token generation failed', HttpStatus.INTERNAL_SERVER_ERROR);
       }
       res.locals.csrfToken = csrfToken;
       this.logger.debug(`Generated CSRF token: ${csrfToken}`);
 
+      /** Validates the CSRF token for the request. */
       this.csrfProtection.doubleCsrfProtection(req, res, (err) => {
         if (err) {
           this.logger.error(

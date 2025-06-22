@@ -31,7 +31,8 @@ export class ImageController {
    * Saves an image to S3 and its metadata to MongoDB.
    * @param body - The image data, including base64 content and metadata.
    * @returns A promise resolving to the saved image metadata and success message.
-   * @throws BadRequestException - If the input data is invalid (e.g., missing fields, invalid base64, date, or time format).
+   * @throws BadRequestException - If the input data is invalid (e.g., missing fields,
+   * invalid base64, date, or time format).
    * @throws InternalServerErrorException - If the S3 upload or MongoDB save fails.
    */
   @Post()

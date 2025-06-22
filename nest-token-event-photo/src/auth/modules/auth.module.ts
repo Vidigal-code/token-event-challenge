@@ -10,12 +10,15 @@ import { User, UserSchema } from '../../users/schemas/user.schema';
 import { RefreshToken, RefreshTokenSchema } from '../../users/schemas/refresh-token.schema';
 import { CsrfMiddleware } from '../middlewares/csrf.middleware';
 
+/** Module for handling authentication-related functionality. */
 @Module({
   imports: [
+    /** Configures Mongoose schemas for User and RefreshToken. */
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: RefreshToken.name, schema: RefreshTokenSchema },
     ]),
+    /** Configures JWT module with dynamic secret and expiration settings. */
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
@@ -40,6 +43,7 @@ import { CsrfMiddleware } from '../middlewares/csrf.middleware';
   exports: [AuthService, RolesGuardService, JwtModule],
 })
 export class AuthModule implements NestModule {
+  /** Configures CSRF middleware for specific authentication routes, excluding the check endpoint. */
   configure(consumer: MiddlewareConsumer) {
     consumer
         .apply(CsrfMiddleware)
