@@ -6,12 +6,6 @@ services:
     container_name: aws
     ports:
       - "0.0.0.0:4566:4566"
-    environment:
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
-      - AWS_DEFAULT_REGION=us-east-1
-      - SERVICES=s3
-      - DEBUG=1
     env_file:
       - .env
     volumes:
@@ -51,15 +45,6 @@ services:
     container_name: nest-token-event-photo
     ports:
       - "0.0.0.0:3001:3001"
-    environment:
-      - AWS_ENDPOINT_URL=http://localstack:4566
-      - AWS_REGION=us-east-1
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
-      - MONGODB_URI=mongodb://mongodb:27017/nextlab
-      - NODE_ENV=development
-      - PORT=3001
-      - HOST=0.0.0.0
     env_file:
       - .env
     depends_on:

@@ -23,3 +23,15 @@ export interface SaveImageResponse {
    */
   message: string;
 }
+
+/**
+ * Interface for the response containing a base64-encoded image.
+ * Returned by getImageByQrCodeId method.
+ */
+export interface Base64ImageResponse {
+  /**
+   * The image data encoded in base64 format.
+   * @example "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+   */
+  base64: string;
+}

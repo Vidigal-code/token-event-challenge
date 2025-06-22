@@ -15,7 +15,10 @@ import { Logger } from '@nestjs/common';
 import { SaveImageDto } from '../dtos/save-image.dto';
 import { ImageMessageException } from '../message/errors/image-message-errors';
 import { ImageMessageSuccess } from '../message/sucess/image-message-sucess';
-import { SaveImageResponse } from '../message/interface.response';
+import {
+  Base64ImageResponse,
+  SaveImageResponse,
+} from '../message/interface.response';
 
 /**
  * Service for managing image operations.
@@ -169,7 +172,7 @@ export class ImageService {
    * @throws NotFoundException - If no image metadata is found for the qrCodeId.
    * @throws InternalServerErrorException - If the S3 retrieval fails.
    */
-  async getImageByQrCodeId(qrCodeId: string): Promise<{ base64: string }> {
+  async getImageByQrCodeId(qrCodeId: string): Promise<Base64ImageResponse> {
     if (!qrCodeId) {
       throw ImageMessageException.MissingQrCodeId();
     }

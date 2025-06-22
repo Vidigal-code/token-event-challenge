@@ -9,6 +9,7 @@ import {
 import { ImageService } from '../services/image.service';
 import { SaveImageDto } from '../dtos/save-image.dto';
 import { SaveImageResponse } from '../message/interface.response';
+import { Throttle } from '@nestjs/throttler';
 
 /**
  * Controller for handling image-related HTTP requests.
@@ -26,6 +27,7 @@ export class ImageController {
    * @throws InternalServerErrorException - If the S3 upload or MongoDB save fails.
    */
   @Post()
+  @Throttle({ default: { limit: 3, ttl: 300 } })
   async saveImage(
     @Body(ValidationPipe) body: SaveImageDto
   ): Promise<SaveImageResponse> {
@@ -41,6 +43,7 @@ export class ImageController {
    * @throws InternalServerErrorException - If the S3 retrieval fails.
    */
   @Get('qr/:qrCodeId')
+  @Throttle({ default: { limit: 3, ttl: 300 } })
   async getImageByQrCodeId(@Param('qrCodeId') qrCodeId: string) {
     return this.imageService.getImageByQrCodeId(qrCodeId);
   }
