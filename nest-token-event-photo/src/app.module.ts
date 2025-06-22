@@ -11,16 +11,26 @@ import * as path from 'path';
 /**
  * The root module of the application.
  *
- * This module sets up configuration, database connection (MongoDB),
- * rate limiting, and global interceptors. It also imports feature modules
- * such as AuthModule and ImageModule to organize application logic.
+ * This module sets up:
+ * - Global configuration using `ConfigModule`
+ * - MongoDB connection using `MongooseModule`
+ * - Request throttling with `ThrottlerModule`
+ * - Global request sanitation via `SanitizeInputInterceptor`
+ * - Core feature modules like `AuthModule` and `ImageModule`
  */
 @Module({
   imports: [
+    /**
+     * Loads environment variables and makes them globally available.
+     */
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: path.resolve(process.cwd(), '.env'),
     }),
+
+    /**
+     * Configures and connects to MongoDB using environment variables.
+     */
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -29,6 +39,9 @@ import * as path from 'path';
       }),
     }),
 
+    /**
+     * Sets up rate-limiting (throttling) based on configuration.
+     */
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -36,23 +49,23 @@ import * as path from 'path';
         throttlers: [
           {
             name: 'default',
-            ttl: parseInt(
-              configService.get<string>('THROTTLE_TTL_SECONDS', '60'),
-              10
-            ),
-            limit: parseInt(
-              configService.get<string>('THROTTLE_LIMIT', '100'),
-              10
-            ),
+            ttl: parseInt(configService.get<string>('THROTTLE_TTL_SECONDS', '60'), 10),
+            limit: parseInt(configService.get<string>('THROTTLE_LIMIT', '100'), 10),
           },
         ],
       }),
     }),
 
+    /**
+     * Importing custom application modules.
+     */
     AuthModule,
     ImageModule,
   ],
   providers: [
+    /**
+     * Applies the input sanitation interceptor globally across the application.
+     */
     {
       provide: APP_INTERCEPTOR,
       useClass: SanitizeInputInterceptor,

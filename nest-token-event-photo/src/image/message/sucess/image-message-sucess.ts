@@ -15,4 +15,26 @@ export class ImageMessageSuccess {
       message: 'IMAGE SAVED SUCCESSFULLY TO AWS S3',
     };
   }
+
+  /**
+   * Creates a success response for a successful retrieval of all images.
+   * @returns An object containing the status code and success message.
+   */
+  static RetrievedSuccessfully() {
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'IMAGES RETRIEVED SUCCESSFULLY FROM DATABASE',
+    };
+  }
+
+  /**
+   * Creates a success response for a successful image deletion operation.
+   * @returns An object containing the status code and success message.
+   */
+  static DeletedSuccessfully() {
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'IMAGE DELETED SUCCESSFULLY FROM AWS S3 AND DATABASE',
+    };
+  }
 }

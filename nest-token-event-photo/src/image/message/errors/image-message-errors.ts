@@ -101,4 +101,49 @@ export class ImageMessageException {
       message: `Failed to retrieve image from S3 for key: ${key}`,
     });
   }
+
+  /**
+   * Creates an exception when no images are found in the database.
+   * @returns A NotFoundException with a message indicating no images were found.
+   */
+  static NoImagesFound() {
+    return new NotFoundException({
+      statusCode: HttpStatus.NOT_FOUND,
+      message: 'No images found in the database',
+    });
+  }
+
+  /**
+   * Creates an exception for a failed database query operation.
+   * @returns An InternalServerErrorException with a message indicating the database query failure.
+   */
+  static DatabaseQueryFailed() {
+    return new InternalServerErrorException({
+      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: 'Failed to query images from the database',
+    });
+  }
+
+  /**
+   * Creates an exception for a failed S3 image deletion operation.
+   * @param key - The S3 key of the image that could not be deleted.
+   * @returns An InternalServerErrorException with a message indicating the deletion failure.
+   */
+  static S3DeletionFailed(key: string) {
+    return new InternalServerErrorException({
+      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: `Failed to delete image from S3 for key: ${key}`,
+    });
+  }
+
+  /**
+   * Creates an exception for a failed database operation (e.g., deletion).
+   * @returns An InternalServerErrorException with a message indicating the database operation failure.
+   */
+  static DatabaseOperationFailed() {
+    return new InternalServerErrorException({
+      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: 'Failed to perform database operation',
+    });
+  }
 }

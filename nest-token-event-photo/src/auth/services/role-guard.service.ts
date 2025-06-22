@@ -1,9 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
@@ -12,34 +7,32 @@ import { JwtPayload } from '../utilities/authenticated-request';
 import { ROLES_KEY } from '../utilities/roles.auth';
 
 /**
- * Guard that handles role-based authorization.
- *
- * It extracts the JWT from cookies, verifies it, and checks if the user
- * has the necessary role(s) to access the route, based on metadata set with the `@Roles()` decorator.
+ * RolesGuardService is a NestJS guard that enforces role-based access control.
+ * It verifies a JWT from cookies and checks whether the user has the required role(s).
  */
 @Injectable()
 export class RolesGuardService implements CanActivate {
   private readonly logger = new Logger(RolesGuardService.name);
 
   /**
-   * Constructor for RolesGuardService.
-   *
-   * @param jwtService - Service to verify JWT tokens.
-   * @param reflector - Utility to get metadata set by decorators like @Roles().
-   * @param configService - Service to access environment variables (e.g., JWT secret).
+   * Constructor injects JwtService, Reflector, and ConfigService.
+   * @param jwtService - Handles JWT verification
+   * @param reflector - Used to get metadata like required roles
+   * @param configService - Provides configuration variables like JWT_SECRET
    */
   constructor(
-    private readonly jwtService: JwtService,
-    private readonly reflector: Reflector,
-    private readonly configService: ConfigService
-  ) {}
+      private readonly jwtService: JwtService,
+      private readonly reflector: Reflector,
+      private readonly configService: ConfigService
+  ) {
+    this.logger.log('RolesGuardService initialized. JwtService:', !!jwtService);
+  }
 
   /**
-   * Determines whether the current request is authorized to proceed.
-   *
-   * @param context - The execution context containing the request.
-   * @returns A boolean indicating whether access is allowed.
-   * @throws Custom errors for missing or invalid tokens, or lack of authorization.
+   * Determines whether the current request can proceed based on JWT and roles.
+   * @param context - The execution context of the request
+   * @returns A boolean indicating whether access is granted
+   * @throws An error if token is missing, invalid, or user is not authorized
    */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -47,7 +40,6 @@ export class RolesGuardService implements CanActivate {
 
     this.logger.debug(`Extracted token from cookies: ${token || 'None'}`);
 
-    // If no token is found, deny access
     if (!token) {
       this.logger.warn('No accessToken found in cookies');
       throw AuthMessageErrors.NoTokenProvided();
@@ -55,7 +47,6 @@ export class RolesGuardService implements CanActivate {
 
     let payload: JwtPayload;
 
-    // Verify JWT token and attach the payload to the request
     try {
       payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
         secret: this.configService.get<string>('JWT_SECRET'),
@@ -67,33 +58,25 @@ export class RolesGuardService implements CanActivate {
       throw AuthMessageErrors.InvalidToken();
     }
 
-    // Get required roles from metadata
     const requiredRoles = this.reflector.getAllAndOverride<string[]>(
-      ROLES_KEY,
-      [context.getHandler(), context.getClass()]
+        ROLES_KEY,
+        [context.getHandler(), context.getClass()]
     );
 
-    // If no roles are required, allow access
     if (!requiredRoles) {
       return true;
     }
 
     const { user } = request;
 
-    // Ensure user exists and has a role
     if (!user || !user.role) {
-      this.logger.warn(
-        `User or role missing in payload: ${JSON.stringify(user)}`
-      );
+      this.logger.warn(`User or role missing in payload: ${JSON.stringify(user)}`);
       throw AuthMessageErrors.UserNotAuthenticated();
     }
 
-    // Check if user role matches one of the required roles
     const hasRole = requiredRoles.some((role) => user.role === role);
     if (!hasRole) {
-      this.logger.warn(
-        `User ${user.sub} lacks required role: ${requiredRoles.join(', ')}`
-      );
+      this.logger.warn(`User ${user.sub} lacks required role: ${requiredRoles.join(', ')}`);
     }
 
     return hasRole;

@@ -9,8 +9,8 @@ export default defineConfig({
   ],
   server: {
     /*https: {
-      key: fs.readFileSync(path.resolve(__dirname, 'ssl/192.168.0.13-key.pem')),
-      cert: fs.readFileSync(path.resolve(__dirname, 'ssl/192.168.0.13.pem')),
+      key: fs.readFileSync(path.resolve(__dirname, 'ssl/fake-key.pem')),
+      cert: fs.readFileSync(path.resolve(__dirname, 'ssl/fake.pem')),
     },*/
     host: true,
     port: 3000,
