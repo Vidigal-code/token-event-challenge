@@ -97,6 +97,7 @@ const Renderphotos: React.FC = () => {
     }, []);
 
     const takePhoto = useCallback(async () => {
+
         if (!webcamRef.current || !canvasRef.current) {
             setError('Webcam or canvas reference is missing. Please try again.');
             startOver();
