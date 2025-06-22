@@ -31,7 +31,7 @@ import { AuthMessageSuccess } from '../message/sucess/auth-message.sucess';
 /**
  * Controller responsible for handling authentication-related endpoints,
  * including user registration, login, token refresh, logout, password updates,
- * and admin panel access.
+ * admin panel access, and authentication status check.
  */
 @Controller('auth')
 @UseInterceptors(SanitizeInputInterceptor)
@@ -39,8 +39,8 @@ export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
   constructor(
-    private authService: AuthService,
-    private configService: ConfigService
+      private authService: AuthService,
+      private configService: ConfigService
   ) {}
 
   /**
@@ -55,16 +55,16 @@ export class AuthController {
   @Post('register')
   @Throttle({ default: { limit: 5, ttl: 300 } })
   async register(
-    @Body() registerDto: RegisterDto,
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response
+      @Body() registerDto: RegisterDto,
+      @Req() req: Request,
+      @Res({ passthrough: true }) res: Response
   ) {
     const { accessToken, refreshToken, user } =
-      await this.authService.createUser(
-        registerDto.name,
-        registerDto.email,
-        registerDto.password
-      );
+        await this.authService.createUser(
+            registerDto.name,
+            registerDto.email,
+            registerDto.password
+        );
 
     this.setTokens(res, accessToken, refreshToken);
 
@@ -88,13 +88,13 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 300 } })
   async login(
-    @Body() loginDto: LoginDto,
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response
+      @Body() loginDto: LoginDto,
+      @Req() req: Request,
+      @Res({ passthrough: true }) res: Response
   ) {
     const { accessToken, refreshToken, user } = await this.authService.login(
-      loginDto.email,
-      loginDto.password
+        loginDto.email,
+        loginDto.password
     );
 
     this.setTokens(res, accessToken, refreshToken);
@@ -119,8 +119,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60 } })
   async refresh(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response
+      @Req() req: Request,
+      @Res({ passthrough: true }) res: Response
   ) {
     const refreshToken = req.cookies?.refreshToken ?? null;
     if (!refreshToken) {
@@ -128,7 +128,7 @@ export class AuthController {
     }
 
     const { accessToken, refreshToken: newRefreshToken } =
-      await this.authService.refreshToken(refreshToken);
+        await this.authService.refreshToken(refreshToken);
 
     this.setTokens(res, accessToken, newRefreshToken);
 
@@ -187,14 +187,14 @@ export class AuthController {
   @UseGuards(RolesGuardService)
   @Throttle({ default: { limit: 3, ttl: 300 } })
   async updatePassword(
-    @Req() req: AuthenticatedRequest,
-    @Body() updatePasswordDto: UpdatePasswordDto,
-    @Res({ passthrough: true }) res: Response
+      @Req() req: AuthenticatedRequest,
+      @Body() updatePasswordDto: UpdatePasswordDto,
+      @Res({ passthrough: true }) res: Response
   ) {
     await this.authService.updatePassword(
-      req.user.sub,
-      updatePasswordDto.oldPassword,
-      updatePasswordDto.newPassword
+        req.user.sub,
+        updatePasswordDto.oldPassword,
+        updatePasswordDto.newPassword
     );
 
     if (req.generateCsrfToken) {
@@ -231,6 +231,23 @@ export class AuthController {
   }
 
   /**
+   * Checks if the user is authenticated by verifying the JWT token.
+   * Returns a boolean indicating authentication status and the user's ID if authenticated, or 0 if not.
+   * @param req - Authenticated request object containing the user's JWT payload, if available.
+   * @returns Object with 'authenticated' boolean and 'id' string (user ID or '0').
+   */
+  @Get('check')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60 } })
+  @UseGuards(RolesGuardService)
+  async checkAuth(@Req() req: AuthenticatedRequest) {
+    return {
+      authenticated: !!req.user,
+      id: req.user ? req.user.sub : '0',
+    };
+  }
+
+  /**
    * Sets access and refresh tokens in HTTP-only cookies.
    * @param res - Express response object for setting cookies.
    * @param accessToken - JWT access token for authentication.
@@ -239,19 +256,19 @@ export class AuthController {
   private setTokens(res: Response, accessToken: string, refreshToken: string) {
     const isProduction = this.configService.get('NODE_ENV') === 'production';
     const accessTokenExpiry =
-      this.configService.get<number>('JWT_EXPIRES_IN_MS');
+        this.configService.get<number>('JWT_EXPIRES_IN_MS');
     const refreshTokenExpiry = this.configService.get<number>(
-      'REFRESH_TOKEN_EXPIRES_IN_MS'
+        'REFRESH_TOKEN_EXPIRES_IN_MS'
     );
 
     AuthCookieUtils.clearTokensInCookies(res, isProduction);
     AuthCookieUtils.setTokensInCookies(
-      res,
-      accessToken,
-      refreshToken,
-      isProduction,
-      accessTokenExpiry,
-      refreshTokenExpiry
+        res,
+        accessToken,
+        refreshToken,
+        isProduction,
+        accessTokenExpiry,
+        refreshTokenExpiry
     );
 
     if (res.locals.csrfToken) {
