@@ -7,7 +7,8 @@ import CountdownScreen from './components/CountdownScreen.tsx';
 import ReviewScreen from './components/ReviewScreen.tsx';
 import FinalScreen from './components/FinalScreen.tsx';
 import nexLabLogo from '../../public/nexlab.png';
-import { API_BACK_END } from '../api/api.ts';
+import { VITE_API_BACK_END } from '../api/api.ts';
+import axios from 'axios';
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
@@ -31,6 +32,7 @@ const Renderphotos: React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
     //const [csrfToken, setCsrfToken] = useState<string | null>(null);
+
     const [authState, setAuthState] = useState<AuthState>({ authenticated: false, id: '0' });
 
     const webcamRef = useRef<Webcam | null>(null);
@@ -39,11 +41,12 @@ const Renderphotos: React.FC = () => {
     const [countdownActive, setCountdownActive] = useState<boolean>(false);
 
     //const [id, setId] = useState<string>('');
+
     const [qrCodeId, setQrCodeId] = useState<string>('');
 
     /*const fetchCsrfToken = useCallback(async () => {
         try {
-            const response = await fetch(`${API_BACK_END}/auth/csrf`, {
+            const response = await fetch(`${VITE_API_BACK_END}/auth/csrf`, {
                 method: 'GET',
                 credentials: 'include',
             });
@@ -58,22 +61,18 @@ const Renderphotos: React.FC = () => {
         }
     }, []);*/
 
-    const checkAuth = useCallback(async () => {
-        try {
-            const response = await fetch(`${API_BACK_END}/auth/check`, {
-                method: 'GET',
-                credentials: 'include',
+    const checkAuth = useCallback(() => {
+        axios.get(`${VITE_API_BACK_END}/auth/check`, {
+            withCredentials: true
+        })
+            .then((response) => {
+                setAuthState(response.data);
+                //console.log(response.data.id);
+            })
+            .catch((err) => {
+                console.error('Error checking authentication:', err);
+                setAuthState({ authenticated: false, id: '0' });
             });
-            if (!response.ok) {
-                throw new Error(`Failed to check authentication: ${response.statusText}`);
-            }
-            const data: AuthState = await response.json();
-            setAuthState(data);
-            console.log(authState.id);
-        } catch (err) {
-            console.error('Error checking authentication:', err);
-            setAuthState({ authenticated: false, id: '0' });
-        }
     }, []);
 
    /* useEffect(() => {
@@ -81,9 +80,7 @@ const Renderphotos: React.FC = () => {
         checkAuth();
     }, [fetchCsrfToken, checkAuth]);*/
 
-    useEffect(() => {
-        checkAuth();
-    }, [checkAuth]);
+
 
     const startOver = useCallback(() => {
         setError(null);
@@ -95,6 +92,7 @@ const Renderphotos: React.FC = () => {
         setCountdown(3);
         setCountdownActive(false);
     }, []);
+
 
     const takePhoto = useCallback(async () => {
 
@@ -115,12 +113,8 @@ const Renderphotos: React.FC = () => {
         setIsLoading(true);
 
         try {
-
             const context = canvasRef.current.getContext('2d');
-
-            if (!context) {
-                throw new Error('Failed to get canvas context.');
-            }
+            if (!context) throw new Error('Failed to get canvas context.');
 
             const [loadedImage, loadedLogo] = await Promise.all([
                 loadImage(imageSrc),
@@ -132,7 +126,6 @@ const Renderphotos: React.FC = () => {
             canvas.height = 1920;
 
             context.drawImage(loadedImage, 0, 0, canvas.width, canvas.height);
-
             context.fillStyle = 'rgba(255, 255, 255, 0.9)';
             context.fillRect(0, 0, canvas.width, 150);
             context.fillRect(0, canvas.height - 100, canvas.width, 100);
@@ -150,60 +143,39 @@ const Renderphotos: React.FC = () => {
 
             const newId = uuidv4();
             const newQrCodeId = uuidv4();
-            //setId(newId);
             setQrCodeId(newQrCodeId);
 
             const now = new Date();
             const date = now.toISOString().split('T')[0];
             const time = now.toTimeString().split(' ')[0];
 
-            const response = await fetch(`${API_BACK_END}/image`, {
-                method: 'POST',
+            await axios.post(`${VITE_API_BACK_END}/image`, {
+                id: newId,
+                base64: photoData,
+                qrCodeId: newQrCodeId,
+                date,
+                time,
+                userId: authState.id,
+            }, {
                 headers: {
                     'Content-Type': 'application/json',
-                    // Omit X-CSRF-Token for /image unless confirmed required
                 },
-                credentials: 'include',
-                body: JSON.stringify({
-                    id: newId,
-                    base64: photoData,
-                    qrCodeId: newQrCodeId,
-                    date,
-                    time,
-                    userId: authState.id,
-                }),
+                withCredentials: true,
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`Failed to save image: ${errorData.message || response.statusText}`);
-            }
 
             setIsLoading(false);
             setStep(5);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error during image processing:', err);
-            setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+            const message = err?.response?.data?.message || err.message || 'An unknown error occurred.';
+            setError(message);
             setIsLoading(false);
             setStep(4);
         }
+
     }, [startOver, authState.id]);
 
-    useEffect(() => {
-        if (!countdownActive) return;
-
-        if (countdown === 0) {
-            setCountdownActive(false);
-            takePhoto();
-            return;
-        }
-
-        const timer = setTimeout(() => {
-            setCountdown((prev) => prev - 1);
-        }, 1000);
-
-        return () => clearTimeout(timer);
-    }, [countdownActive, countdown, takePhoto]);
 
     const startCapture = useCallback(() => setStep(2), []);
 
@@ -284,6 +256,25 @@ const Renderphotos: React.FC = () => {
                 return <InitialScreen onStart={startCapture} />;
         }
     };
+
+
+    useEffect(() => {
+        checkAuth();
+
+        if (!countdownActive) return;
+
+        if (countdown === 0) {
+            setCountdownActive(false);
+            takePhoto();
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            setCountdown((prev) => prev - 1);
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [checkAuth, countdownActive, countdown, takePhoto]);
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br

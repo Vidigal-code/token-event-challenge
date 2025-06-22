@@ -1,6 +1,5 @@
 import {useEffect, useRef, useMemo} from 'react';
 import QRCode from 'qrcode';
-import { API_BACK_END } from '../../api/api';
 
 /*interface FinalScreenProps {
     photo: string;
@@ -25,9 +24,9 @@ const FinalScreen = ({photo, qrCodeId, onFinalize}: FinalScreenProps) => {
             return '';
         }
 
-        //const baseUrl = window.location.origin;
+        const baseUrl = window.location.origin;
 
-        return `${API_BACK_END}/#/preview?qrCodeId=${qrCodeId}`;
+        return `${baseUrl}/#/preview?qrCodeId=${qrCodeId}`;
 
     }, [qrCodeId]);
 
