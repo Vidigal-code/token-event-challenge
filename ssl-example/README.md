@@ -35,3 +35,8 @@
         - `react-token-event-photo/ssl`
 
    > If the `ssl` folder doesn’t exist in these projects, create it before pasting the files.
+
+---
+
+   <img src="https://github.com/Vidigal-code/token-event-challenge/blob/main/ssl-example/example-ssl-add-test.png?raw=true" alt="" width="800"/> 
+
