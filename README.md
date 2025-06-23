@@ -273,6 +273,9 @@ As principais rotas da API são:
 
 # Docker Example / Exemplo
 
+<img src="./example/example-docker.png" alt="" width="800"/> 
+
+
 <details>
 <summary><strong>🇧🇷 Descrição em Português - Exemplo Docker</strong></summary>
 
