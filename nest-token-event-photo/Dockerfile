@@ -20,7 +20,7 @@ WORKDIR /app
 COPY . .
 
 # Make entrypoint script executable
-RUN chmod +x ./entrypoint.sh
+RUN chmod +x entrypoint.sh
 
 # Install npm dependencies
 RUN npm install --force
