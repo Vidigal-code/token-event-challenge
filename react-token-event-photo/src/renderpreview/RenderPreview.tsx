@@ -5,7 +5,7 @@ import { VITE_API_BACK_END } from '../api/api';
 import type { ImageResponse } from './interface-render-preview';
 import { IoExitOutline } from 'react-icons/io5';
 
-const Renderpreview: React.FC = () => {
+const RenderPreview: React.FC = () => {
     /**
      * State holding the base64 string of the fetched image or null if not loaded.
      */
@@ -173,4 +173,4 @@ const Renderpreview: React.FC = () => {
     );
 };
 
-export default Renderpreview;
+export default RenderPreview;

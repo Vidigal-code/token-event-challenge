@@ -24,7 +24,7 @@ interface AuthState {
     id: string;
 }
 
-const Renderphotos: React.FC = () => {
+const RenderPhotos: React.FC = () => {
 
     const [step, setStep] = useState<number>(1);
     const [photo, setPhoto] = useState<string | null>(null);
@@ -141,31 +141,11 @@ const Renderphotos: React.FC = () => {
             const photoData = canvas.toDataURL('image/png');
             setPhoto(photoData);
 
-            const newId = uuidv4();
             const newQrCodeId = uuidv4();
             setQrCodeId(newQrCodeId);
 
-            const now = new Date();
-            const date = now.toISOString().split('T')[0];
-            const time = now.toTimeString().split(' ')[0];
-
-            await axios.post(`${VITE_API_BACK_END}/image`, {
-                id: newId,
-                base64: photoData,
-                qrCodeId: newQrCodeId,
-                date,
-                time,
-                userId: authState.id,
-            }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                withCredentials: true,
-            });
-
-
             setIsLoading(false);
-            setStep(5);
+            setStep(4);
         } catch (err: any) {
             console.error('Error during image processing:', err);
             const message = err?.response?.data?.message || err.message || 'An unknown error occurred.';
@@ -192,7 +172,58 @@ const Renderphotos: React.FC = () => {
         setStep(2);
     }, []);
 
-    const approve = useCallback(() => setStep(4), []);
+    const approve = useCallback(async (): Promise<void> => {
+        if (!photo) {
+            setError('Photo data is missing. Please try again.');
+            setStep(4);
+            return;
+        }
+
+        if (!qrCodeId) {
+            setError('QR Code ID is missing. Please retake the photo.');
+            setStep(4);
+            return;
+        }
+
+        try {
+            const newId = uuidv4();
+
+            const now = new Date();
+            const date = now.toISOString().split('T')[0];
+            const time = now.toTimeString().split(' ')[0];
+
+            await axios.post(
+                `${VITE_API_BACK_END}/image`,
+                {
+                    id: newId,
+                    base64: photo,
+                    qrCodeId,
+                    date,
+                    time,
+                    userId: authState.id,
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    withCredentials: true,
+                }
+            );
+
+            setStep(5);
+        } catch (err: unknown) {
+            console.error('Error upload image:', err);
+            const message =
+                axios.isAxiosError(err) && err.response?.data?.message
+                    ? err.response.data.message
+                    : err instanceof Error
+                        ? err.message
+                        : 'An unknown error occurred.';
+            setError(message);
+            setIsLoading(false);
+            setStep(4);
+        }
+    }, [photo, qrCodeId, authState.id]);
 
     const renderContent = () => {
         if (error) {
@@ -297,4 +328,4 @@ const Renderphotos: React.FC = () => {
     );
 };
 
-export default Renderphotos;
+export default RenderPhotos;
