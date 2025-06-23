@@ -6,20 +6,44 @@ import type { ImageResponse } from './interface-render-preview';
 import { IoExitOutline } from 'react-icons/io5';
 
 const Renderpreview: React.FC = () => {
+    /**
+     * State holding the base64 string of the fetched image or null if not loaded.
+     */
     const [imageSrc, setImageSrc] = useState<string | null>(null);
+
+    /**
+     * State holding any error messages related to image fetching or other operations.
+     */
     const [error, setError] = useState<string | null>(null);
+
+    /**
+     * Loading state to indicate whether the image is currently being fetched.
+     */
     const [isLoading, setIsLoading] = useState(true);
+
     const location = useLocation();
     const navigate = useNavigate();
 
+    /**
+     * Extracts the 'qrCodeId' query parameter from the current URL.
+     * @returns {string} The QR code ID or empty string if not found.
+     */
     const getQrCodeId = () => {
         const params = new URLSearchParams(location.search);
         return params.get('qrCodeId') || '';
     };
 
     const qrCodeId = getQrCodeId();
+
+    /**
+     * Constructs the backend URL to fetch the image associated with the QR code ID.
+     */
     const qrCodeUrl = qrCodeId ? `${VITE_API_BACK_END}/image/qr/${qrCodeId}` : '';
 
+    /**
+     * Effect hook that triggers on qrCodeId change.
+     * Fetches the base64 image data from the backend or sets error/loading states accordingly.
+     */
     useEffect(() => {
 
         if (!qrCodeId) {
@@ -54,6 +78,10 @@ const Renderpreview: React.FC = () => {
         fetchImage();
     }, [qrCodeId]);
 
+    /**
+     * Handles the download of the currently loaded image.
+     * Creates a temporary anchor element to trigger the download of the base64 image.
+     */
     const handleDownload = () => {
         if (!imageSrc) return;
 
@@ -64,6 +92,7 @@ const Renderpreview: React.FC = () => {
         link.click();
         document.body.removeChild(link);
     };
+
 
     if (isLoading) {
         return (

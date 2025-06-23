@@ -1,21 +1,62 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+/**
+ * LoginPhotos Component
+ *
+ * A login form component with email and password inputs that:
+ * - Fetches a CSRF token on mount to protect against CSRF attacks
+ * - Sends login credentials securely with the CSRF token included in headers
+ * - Displays loading state and error messages
+ * - Navigates to a protected panel route on successful login
+ * - Includes a logo and a button to exit back to the home page
+ *
+ * Uses React hooks (useState, useEffect, useCallback) for state management and side effects.
+ * Axios is used for HTTP requests with credentials.
+ */
+import {useState, useEffect, useCallback} from 'react';
+import {useNavigate} from 'react-router-dom';
 import nexLabLogo from '../../../public/nexlab.png';
-import { VITE_API_BACK_END } from '../../api/api.ts';
+import {VITE_API_BACK_END} from '../../api/api.ts';
 import axios from 'axios';
-import type {AuthState, CsrfResponse, LoginResponse } from './interface-login.ts';
-import { IoMdExit } from 'react-icons/io';
+import type {AuthState, CsrfResponse, LoginResponse} from './interface-login.ts';
+import {IoExitOutline} from 'react-icons/io5';
 
 const LoginPhotos: React.FC = () => {
 
+    /**
+     * User email state
+     */
     const [email, setEmail] = useState<string>('test@example.com');
+
+    /**
+     * User password state
+     */
     const [password, setPassword] = useState<string>('TestAAA1#');
+
+    /**
+     * CSRF token state for protection against cross-site request forgery
+     */
     const [csrfToken, setCsrfToken] = useState<string | null>(null);
-    const [authState, setAuthState] = useState<AuthState>({ authenticated: false, id: '0' });
+
+    /**
+     * Authentication state including whether authenticated and user ID
+     */
+    const [authState, setAuthState] = useState<AuthState>({authenticated: false, id: '0'});
+
+    /**
+     * Error message state for login or CSRF token fetching errors
+     */
     const [error, setError] = useState<string | null>(null);
+
+    /**
+     * Loading state for login request
+     */
     const [isLoading, setIsLoading] = useState<boolean>(false);
+
     const navigate = useNavigate();
 
+    /**
+     * Fetches the CSRF token from the backend
+     * and stores it in state.
+     */
     const fetchCsrfToken = useCallback(() => {
         axios.get<CsrfResponse>(`${VITE_API_BACK_END}/auth/csrf`, {
             withCredentials: true,
@@ -29,7 +70,12 @@ const LoginPhotos: React.FC = () => {
             });
     }, []);
 
-
+    /**
+     * Handles the login form submission.
+     * Sends email, password, and CSRF token to the backend.
+     * Updates authentication state and navigates on success.
+     * @param e React.FormEvent from form submission
+     */
     const handleLogin = useCallback((e: React.FormEvent) => {
         e.preventDefault();
 
@@ -43,7 +89,7 @@ const LoginPhotos: React.FC = () => {
 
         axios.post<LoginResponse>(
             `${VITE_API_BACK_END}/auth/login`,
-            { email, password },
+            {email, password},
             {
                 headers: {
                     'Content-Type': 'application/json',
@@ -53,7 +99,7 @@ const LoginPhotos: React.FC = () => {
             }
         )
             .then(response => {
-                setAuthState({ authenticated: true, id: response.data.user.id });
+                setAuthState({authenticated: true, id: response.data.user.id});
                 setCsrfToken(response.data.csrfToken);
                 navigate('/panel');
             })
@@ -70,7 +116,9 @@ const LoginPhotos: React.FC = () => {
             });
     }, [email, password, csrfToken, navigate]);
 
-
+    /**
+     * Fetch the CSRF token when the component mounts.
+     */
     useEffect(() => {
         fetchCsrfToken();
     }, [fetchCsrfToken]);
@@ -82,17 +130,8 @@ const LoginPhotos: React.FC = () => {
              rounded-xl
             shadow-2xl overflow-hidden flex flex-col">
                 <div className="flex flex-col items-center justify-center flex-grow p-8">
-                    <img src={nexLabLogo} alt="NexLab Logo" className="w-[150px] mb-8" />
+                    <img src={nexLabLogo} alt="NexLab Logo" className="w-[150px] mb-8"/>
                     <h2 className="text-2xl font-bold text-gray-800 mb-6">Login</h2>
-                    <button
-                        onClick={() => navigate(`/`)}
-                        className="flex items-center text-black
-                        hover:text-red-800 mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="View"
-                    >
-                        <span>Exit</span>
-                        <IoMdExit className="w-5 h-5 ml-2" />
-                    </button>
                     {error && (
                         <div className="w-full bg-red-100
                         text-red-700 p-4 rounded-lg mb-6 text-center">
@@ -147,7 +186,8 @@ const LoginPhotos: React.FC = () => {
                                     fill="none"
                                     viewBox="0 0 24 24"
                                 >
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            strokeWidth="4"/>
                                     <path
                                         className="opacity-75"
                                         fill="currentColor"
@@ -160,6 +200,18 @@ const LoginPhotos: React.FC = () => {
                             )}
                         </button>
                     </form>
+                    <div className="w-full flex flex-col gap-4 mt-3">
+                        <button
+                            onClick={() => navigate('/')}
+                            className="flex items-center justify-center flex-1 px-6
+                                    py-3 bg-white text-gray-800 font-semibold rounded-lg border border-gray-300 hover:bg-gray-100
+                                    hover:text-gray-900 transition-colors shadow-md"
+                            title="Return to Home"
+                        >
+                            <IoExitOutline className="w-5 h-5 mr-2"/>
+                            Return
+                        </button>
+                    </div>
                     {authState.authenticated && (
                         <p className="mt-4 text-green-600 text-center">
                             Login successful! Redirecting...

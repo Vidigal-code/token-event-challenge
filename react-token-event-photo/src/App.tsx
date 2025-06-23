@@ -14,6 +14,7 @@ function App() {
                 <Route path="/login" element={<LoginPhotos />} />
                 <Route path="/register" element={<RegisterPhotos />} />
                 <Route path="/panel" element={<PanelUserOrAdminPhotos />} />
+                <Route path="*" element={<Renderphotos />} />
             </Routes>
         </HashRouter>
     );

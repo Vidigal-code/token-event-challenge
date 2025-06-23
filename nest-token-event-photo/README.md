@@ -146,35 +146,28 @@ The project includes a decoupled service for uploading and streaming images to a
 ### 📦 Example `.env` for Docker Development
 
 ```env
-# MongoDB
 MONGODB_URI=mongodb://mongodb:27017/nextlab
-
-# AWS S3 (via LocalStack)
 AWS_ACCESS_KEY_ID=test
 AWS_SECRET_ACCESS_KEY=test
 AWS_REGION=us-east-1
 S3_ENDPOINT=http://localstack:4566
 S3_BUCKET=image-bucket
-
-# App Configuration
 NODE_ENV=development
+API_FRONT_END=https://192.168.0.13:3000
+LOCAL_CERTIFICATE=true
 PORT=3001
 HOST=0.0.0.0
-LOCAL_CERTIFICATE=true
-API_FRONT_END=http://localhost:3000
 
-# Security Secrets
 CSRF_SECRET=]O"d9XoR?zZ"OVyc@^q>{[fZZVlA06zy
 JWT_SECRET=g{qZ8``lng6[Bij%t,z$pfiN8b{79caV
 JWE_SECRET=G^qZf8R!yeLz27TbA9hX3rVu@kLmP0wDsBqvZjKt
 
-# Token Expiration
+
 JWT_EXPIRES_IN=15m
 REFRESH_TOKEN_EXPIRES_IN=7d
 JWT_EXPIRES_IN_MS=900000
 REFRESH_TOKEN_EXPIRES_IN_MS=604800000
 
-# Rate Limiting
 THROTTLE_TTL_SECONDS=60
 THROTTLE_LIMIT=100
 ```

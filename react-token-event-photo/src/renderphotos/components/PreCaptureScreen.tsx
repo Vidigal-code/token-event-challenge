@@ -1,12 +1,31 @@
 import Webcam from 'react-webcam';
 
+/**
+ * Props for PreCaptureScreen component
+ * @property {React.RefObject<Webcam | null>} webcamRef - Reference to the Webcam component
+ * @property {() => void} onCapture - Callback function to trigger photo capture
+ */
 interface PreCaptureScreenProps {
     webcamRef: React.RefObject<Webcam | null>;
     onCapture: () => void;
 }
 
+/**
+ * PreCaptureScreen component displays the live webcam feed
+ * and a capture button to take a photo.
+ *
+ * @param {PreCaptureScreenProps} props - Component props
+ * @returns JSX.Element
+ */
 const PreCaptureScreen = ({ webcamRef, onCapture }: PreCaptureScreenProps) => {
 
+    /**
+     * Video constraints for the webcam feed:
+     * - width: 1080 pixels
+     * - height: 1920 pixels
+     * - aspect ratio: 9:16 (portrait)
+     * - facing mode: user-facing camera
+     */
     const videoConstraints = {
         width: 1080,
         height: 1920,

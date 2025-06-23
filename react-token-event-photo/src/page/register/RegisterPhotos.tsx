@@ -4,20 +4,51 @@ import axios from 'axios';
 import nexLabLogo from '../../../public/nexlab.png';
 import { VITE_API_BACK_END } from '../../api/api.ts';
 import type { AuthState, CsrfResponse, LoginResponse } from '../login/interface-login.ts';
-import { IoMdExit } from 'react-icons/io';
+import { IoExitOutline } from 'react-icons/io5';
 
 const RegisterPhotos: React.FC = () => {
 
+    /**
+     * User's full name state for registration.
+     */
     const [name, setName] = useState<string>('Test User');
+
+    /**
+     * User's email address state for registration/login.
+     */
     const [email, setEmail] = useState<string>('test@example.com');
+
+    /**
+     * User's password state for registration/login.
+     */
     const [password, setPassword] = useState<string>('TestAAA1#');
+
+    /**
+     * CSRF token state to protect against cross-site request forgery.
+     */
     const [csrfToken, setCsrfToken] = useState<string | null>(null);
+
+    /**
+     * Authentication state including authentication status and user ID.
+     */
     const [authState, setAuthState] = useState<AuthState>({ authenticated: false, id: '0' });
+
+    /**
+     * Error message state to display any registration or CSRF errors.
+     */
     const [error, setError] = useState<string | null>(null);
+
+    /**
+     * Loading state indicating whether a network request is in progress.
+     */
     const [isLoading, setIsLoading] = useState<boolean>(false);
+
     const navigate = useNavigate();
 
-
+    /**
+     * Fetches CSRF token from backend and sets it in state.
+     * Handles errors by logging and setting error state.
+     */
     const fetchCsrfToken = useCallback(() => {
         axios
             .get<CsrfResponse>(`${VITE_API_BACK_END}/auth/csrf`, {
@@ -32,6 +63,14 @@ const RegisterPhotos: React.FC = () => {
             });
     }, []);
 
+    /**
+     * Handles the user registration form submission.
+     * Sends name, email, password, and CSRF token to backend.
+     * Updates authentication state and redirects to login on success.
+     * Handles errors and loading state.
+     *
+     * @param e - React form event triggered on form submit.
+     */
     const handleRegister = useCallback(
         (e: React.FormEvent) => {
             e.preventDefault();
@@ -74,9 +113,13 @@ const RegisterPhotos: React.FC = () => {
         [name, email, password, csrfToken, navigate]
     );
 
+    /**
+     * Runs once on component mount to fetch CSRF token.
+     */
     useEffect(() => {
         fetchCsrfToken();
     }, [fetchCsrfToken]);
+
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-200 to-gray-400 font-sans p-4">
@@ -84,14 +127,6 @@ const RegisterPhotos: React.FC = () => {
                 <div className="flex flex-col items-center justify-center flex-grow p-8">
                     <img src={nexLabLogo} alt="NexLab Logo" className="w-[150px] mb-8" />
                     <h2 className="text-2xl font-bold text-gray-800 mb-6">Register</h2>
-                    <button
-                        onClick={() => navigate(`/`)}
-                        className="flex items-center text-black hover:text-red-800 mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="View"
-                    >
-                        <span>Exit</span>
-                        <IoMdExit className="w-5 h-5 ml-2" />
-                    </button>
                     {error && (
                         <div className="w-full bg-red-100 text-red-700 p-4 rounded-lg mb-6 text-center">
                             {error}
@@ -179,6 +214,18 @@ const RegisterPhotos: React.FC = () => {
                             )}
                         </button>
                     </form>
+                    <div className="w-full flex flex-col gap-4 mt-3">
+                        <button
+                            onClick={() => navigate('/')}
+                            className="flex items-center justify-center flex-1 px-6
+                                    py-3 bg-white text-gray-800 font-semibold rounded-lg border border-gray-300 hover:bg-gray-100
+                                    hover:text-gray-900 transition-colors shadow-md"
+                            title="Return to Home"
+                        >
+                            <IoExitOutline className="w-5 h-5 mr-2"/>
+                            Return
+                        </button>
+                    </div>
                     {authState.authenticated && (
                         <p className="mt-4 text-green-600 text-center">
                             Registration successful! Redirecting to login...
