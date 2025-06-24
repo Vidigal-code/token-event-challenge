@@ -48,7 +48,5 @@ else
 fi
 
 echo "LocalStack setup complete."
-
-# Start the NestJS application
 echo "Starting NestJS application..."
 exec npm run start:dev
