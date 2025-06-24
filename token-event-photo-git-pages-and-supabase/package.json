@@ -4,7 +4,7 @@
   "private": false,
   "version": "1.0.0",
   "type": "module",
-  "homepage": "https://vidigal-code.github.io/token-event-challenge/token-event-photo-git-pages-and-supabase",
+  "homepage": "https://vidigal-code.github.io/token-event-challenge/",
   "scripts": {
     "dev": "vite --host",
     "build": "tsc -b && vite build",

@@ -15,8 +15,8 @@ const FinalScreen = ({ photo, qrCodeId, onFinalize }: FinalScreenProps) => {
             console.error('qrCodeId is undefined');
             return '';
         }
-        const baseUrl = window.location.origin;
-        return `${baseUrl}/#/preview?qrCodeId=${qrCodeId}`;
+        //const baseUrl = window.location.origin;
+        return `https://vidigal-code.github.io/token-event-challenge/#/preview?qrCodeId=${qrCodeId}`;
     }, [qrCodeId]);
 
     useEffect(() => {
