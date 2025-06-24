@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 echo "[1/4] Waiting for LocalStack S3 service to be ready..."

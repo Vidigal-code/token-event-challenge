@@ -28,39 +28,7 @@ This is a robust backend project built with <strong>NestJS</strong>, designed to
 The project includes a decoupled service for uploading and streaming images to an <strong>AWS S3</strong> bucket (simulated locally with <strong>LocalStack</strong>), with metadata management in a <strong>MongoDB</strong> database. The entire infrastructure (application, database, and AWS services) is orchestrated with <strong>Docker</strong> and <strong>Docker Compose</strong>, allowing the complete development environment to be started with a single command.
 </details>
 
----
 
-# Renomeação do Arquivo  entrypoint.txt / Renaming the entrypoint.txt File
-
-<details>
-  <summary><strong>🇧🇷 Explicação (Português)</strong></summary>
-  <br>
-
-Para que o Docker possa executar o arquivo como um script de shell, é necessário renomeá-lo de `entrypoint.txt` para `entrypoint.sh`. Isso ocorre porque o Docker, ao executar o entrypoint, precisa de um script válido de shell (`.sh`) para ser interpretado e executado corretamente.
-
-O arquivo `entrypoint.sh` é o responsável por configurar o ambiente do LocalStack e a AWS CLI antes de iniciar a aplicação. Se o arquivo for mantido como `.txt`, ele será tratado apenas como um arquivo de texto simples e não será executado como um script de shell.
-
-**Passos para renomear**:
-1. Renomeie o arquivo `entrypoint.txt` para `entrypoint.sh`.
-2. Certifique-se de que o arquivo tenha permissões de execução com o comando `chmod +x entrypoint.sh`.
-
-</details>
-
-<details>
-  <summary><strong>🇺🇸 Explanation (English)</strong></summary>
-  <br>
-
-In order for Docker to execute the file as a shell script, it is necessary to rename it from `entrypoint.txt` to `entrypoint.sh`. This is because Docker requires a valid shell script (`.sh`) to be interpreted and executed correctly when used as an entrypoint.
-
-The `entrypoint.sh` file is responsible for configuring the LocalStack environment and the AWS CLI before starting the application. If the file remains as `.txt`, it will be treated as a simple text file and will not be executed as a shell script.
-
-**Steps to rename**:
-1. Rename the file from `entrypoint.txt` to `entrypoint.sh`.
-2. Ensure the file has execution permissions with the command `chmod +x entrypoint.sh`.
-
-</details>
-
----
 
 
 ## ✨ Funcionalidades Principais / Key Features

@@ -9,39 +9,7 @@
 
 An interactive and secure photo booth application developed for events. It allows participants to take photos, apply a custom frame, and download them via a QR code. The project includes a complete backend with robust security features and an administrative panel for photo management.
 
----
 
-# Renomeação do Arquivo  entrypoint.txt / Renaming the entrypoint.txt File
-
-<details>
-  <summary><strong>🇧🇷 Explicação (Português)</strong></summary>
-  <br>
-
-Para que o Docker possa executar o arquivo como um script de shell, é necessário renomeá-lo de `../token-event-challenge/nest-token-event-photo/entrypoint.txt` para `entrypoint.sh`. Isso ocorre porque o Docker, ao executar o entrypoint, precisa de um script válido de shell (`.sh`) para ser interpretado e executado corretamente.
-
-O arquivo `entrypoint.sh` é o responsável por configurar o ambiente do LocalStack e a AWS CLI antes de iniciar a aplicação. Se o arquivo for mantido como `.txt`, ele será tratado apenas como um arquivo de texto simples e não será executado como um script de shell.
-
-**Passos para renomear**:
-1. Renomeie o arquivo `entrypoint.txt` para `entrypoint.sh`.
-2. Certifique-se de que o arquivo tenha permissões de execução com o comando `chmod +x entrypoint.sh`.
-
-</details>
-
-<details>
-  <summary><strong>🇺🇸 Explanation (English)</strong></summary>
-  <br>
-
-In order for Docker to execute the file as a shell script, it is necessary to rename it from `../token-event-challenge/nest-token-event-photo/entrypoint.txt` to `entrypoint.sh`. This is because Docker requires a valid shell script (`.sh`) to be interpreted and executed correctly when used as an entrypoint.
-
-The `entrypoint.sh` file is responsible for configuring the LocalStack environment and the AWS CLI before starting the application. If the file remains as `.txt`, it will be treated as a simple text file and will not be executed as a shell script.
-
-**Steps to rename**:
-1. Rename the file from `entrypoint.txt` to `entrypoint.sh`.
-2. Ensure the file has execution permissions with the command `chmod +x entrypoint.sh`.
-
-</details>
-
----
 
 <details>
 <summary><strong>🇬🇧 English Description</strong></summary>
