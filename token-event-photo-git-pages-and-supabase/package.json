@@ -1,18 +1,24 @@
 {
-  "name": "react-token-event-photo",
-  "description": "This project is a fully interactive photo booth application designed for events. It includes a user-facing photo capture\nflow and a secure, role-based admin panel for photo management.",
+  "name": "token-event-photo-git-pages-and-supabase",
+  "description": "This is an interactive web-based photo booth application designed for events. Users can take a picture using their device's webcam, which is then automatically branded with a custom logo and text. After approving the photo, a unique QR code is generated, allowing users to easily download the final image to their own devices.\nThe project is built with a modern tech stack including React, TypeScript, and Tailwind CSS, and it uses Supabase for cloud image storage.",
   "private": false,
   "version": "1.0.0",
   "type": "module",
+  "homepage": "https://vidigal-code.github.io/token-event-challenge/token-event-photo-git-pages-and-supabase",
   "scripts": {
     "dev": "vite --host",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.50.0",
     "@tailwindcss/vite": "^4.1.10",
     "axios": "^1.10.0",
+    "install": "^0.13.0",
+    "npm": "^11.4.2",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
     "react": "^19.1.0",
@@ -33,6 +39,7 @@
     "eslint": "^9.29.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
+    "gh-pages": "^6.3.0",
     "globals": "^16.2.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.35.0",
