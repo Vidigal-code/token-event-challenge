@@ -45,6 +45,7 @@ services:
     container_name: nest-token-event-photo
     ports:
       - "0.0.0.0:3001:3001"
+    entrypoint: [ "/app/entrypoint.sh" ]
     env_file:
       - ./nest-token-event-photo/.env
     depends_on:
@@ -57,6 +58,7 @@ services:
     volumes:
       - ./nest-token-event-photo:/app
       - backend_node_modules:/app/node_modules
+
 
   frontend:
     build:
