@@ -9,7 +9,7 @@
 </p>
 
 <div align="center">
-  <a href="https://vidigal-code.github.io/token-event-challenge/token-event-photo-git-pages-and-supabase">
+  <a href="https://vidigal-code.github.io/token-event-challenge">
     <strong>» Check out the Live Demo «</strong>
   </a>
 </div>
