@@ -16,7 +16,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN chmod +x entrypoint.sh
+RUN chmod +x entrypoint.txt
 
 RUN npm install --force
 
