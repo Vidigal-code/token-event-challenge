@@ -64,8 +64,8 @@ To run this project locally, follow these steps:
 
 2.  **Clone the repository:**
     ```bash
-    git clone https://github.com/Vidigal-code/token-event-challenge/token-event-photo-git-pages-and-supabase.git
-    cd token-event-photo-git-pages-and-gitpages
+    git clone https://github.com/Vidigal-code/token-event-challenge/token-event-photo-git-pages.git
+    cd token-event-photo-git-pages
     ```
 
 3.  **Install dependencies:**
