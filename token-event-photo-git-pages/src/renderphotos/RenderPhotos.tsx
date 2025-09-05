@@ -11,11 +11,13 @@ import {uploadImage} from "../gitpages/gitpage-config.ts";
 const loadImage = (src: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
         const img = new Image();
+        img.crossOrigin = "anonymous";
         img.onload = () => resolve(img);
         img.onerror = (err) => reject(new Error(`Failed to load image: ${err}`));
         img.src = src;
     });
 };
+
 
 const RenderPhotos: React.FC = () => {
     const [step, setStep] = useState<number>(1);
@@ -61,7 +63,7 @@ const RenderPhotos: React.FC = () => {
 
             const [loadedImage, loadedLogo] = await Promise.all([
                 loadImage(imageSrc),
-                loadImage("/vidigalcode.png")
+                loadImage("https://raw.githubusercontent.com/Vidigal-code/token-event-challenge/refs/heads/gh-pages/vidigalcode.png")
             ]);
 
             const canvas = canvasRef.current;

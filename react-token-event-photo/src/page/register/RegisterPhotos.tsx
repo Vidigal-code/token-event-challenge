@@ -124,7 +124,7 @@ const RegisterPhotos: React.FC = () => {
         <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-200 to-gray-400 font-sans p-4">
             <div className="w-full max-w-[400px] h-[711px] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col">
                 <div className="flex flex-col items-center justify-center flex-grow p-8">
-                    <img src="/vidigalcode.png" alt="Vidigal Logo" className="w-[150px] mb-8" />
+                    <img src="https://raw.githubusercontent.com/Vidigal-code/token-event-challenge/refs/heads/gh-pages/vidigalcode.png" alt="Vidigal Logo" className="w-[150px] mb-8" />
                     <h2 className="text-2xl font-bold text-gray-800 mb-6">Register</h2>
                     {error && (
                         <div className="w-full bg-red-100 text-red-700 p-4 rounded-lg mb-6 text-center">

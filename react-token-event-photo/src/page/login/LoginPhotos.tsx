@@ -129,7 +129,7 @@ const LoginPhotos: React.FC = () => {
              rounded-xl
             shadow-2xl overflow-hidden flex flex-col">
                 <div className="flex flex-col items-center justify-center flex-grow p-8">
-                    <img src="/vidigalcode.png" alt="Vidigal Logo" className="w-[150px] mb-8"/>
+                    <img src="https://raw.githubusercontent.com/Vidigal-code/token-event-challenge/refs/heads/gh-pages/vidigalcode.png" alt="Vidigal Logo" className="w-[150px] mb-8"/>
                     <h2 className="text-2xl font-bold text-gray-800 mb-6">Login</h2>
                     {error && (
                         <div className="w-full bg-red-100
