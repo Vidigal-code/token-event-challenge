@@ -114,7 +114,7 @@ const RenderPreview: React.FC = () => {
         <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-200 to-gray-400 p-4 font-sans">
             <div className="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col">
                 <div className="flex flex-col items-center p-8">
-                    <img src="/nexlab.png" alt="NexLab Logo" className="w-[150px] mb-6" />
+                    <img src="/vidigalcode.png" alt="Vidigal Code Logo" className="w-[150px] mb-6" />
                     <h2 className="text-2xl font-bold text-gray-800 mb-6">Photo Preview</h2>
                     {imageSrc && (
                         <>

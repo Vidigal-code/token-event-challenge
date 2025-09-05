@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { IoLogInOutline, IoPersonAddOutline } from 'react-icons/io5';
-import NexLabLogo from './NexLabLogo';
+import VidigalCode from './VidigalCode.tsx';
 
 interface InitialScreenProps {
     onStart: () => void;
@@ -11,7 +11,7 @@ const InitialScreen: React.FC<InitialScreenProps> = ({ onStart }) => {
 
     return (
         <div className="w-full h-screen flex flex-col items-center justify-center text-center  p-8 font-sans">
-            <NexLabLogo className="w-48 h-auto text-gray-800 mb-12" />
+            <VidigalCode className="w-48 h-auto text-gray-800 mb-12" />
             <h1 className="text-5xl md:text-7xl font-bold text-gray-900 tracking-tighter mb-8">
                 Photo Opp
             </h1>

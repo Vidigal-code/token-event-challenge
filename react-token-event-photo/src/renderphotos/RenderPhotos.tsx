@@ -6,7 +6,6 @@ import PreCaptureScreen from './components/PreCaptureScreen.tsx';
 import CountdownScreen from './components/CountdownScreen.tsx';
 import ReviewScreen from './components/ReviewScreen.tsx';
 import FinalScreen from './components/FinalScreen.tsx';
-import nexLabLogo from '../../public/nexlab.png';
 import { VITE_API_BACK_END } from '../api/api.ts';
 import axios from 'axios';
 
@@ -118,7 +117,7 @@ const RenderPhotos: React.FC = () => {
 
             const [loadedImage, loadedLogo] = await Promise.all([
                 loadImage(imageSrc),
-                loadImage(nexLabLogo),
+                loadImage("/vidigalcode.png")
             ]);
 
             const canvas = canvasRef.current;

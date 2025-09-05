@@ -6,7 +6,6 @@ import PreCaptureScreen from './components/PreCaptureScreen.tsx';
 import CountdownScreen from './components/CountdownScreen.tsx';
 import ReviewScreen from './components/ReviewScreen.tsx';
 import FinalScreen from './components/FinalScreen.tsx';
-import nexLabLogo from '../../public/nexlab.png';
 import {uploadImage} from "../gitpages/gitpage-config.ts";
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -62,7 +61,7 @@ const RenderPhotos: React.FC = () => {
 
             const [loadedImage, loadedLogo] = await Promise.all([
                 loadImage(imageSrc),
-                loadImage(nexLabLogo),
+                loadImage("/vidigalcode.png")
             ]);
 
             const canvas = canvasRef.current;

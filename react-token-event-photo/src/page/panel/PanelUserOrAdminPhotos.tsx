@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import nexLabLogo from '../../../public/nexlab.png';
 import { VITE_API_BACK_END } from '../../api/api.ts';
 import type { AuthState, CsrfResponse } from '../login/interface-login.ts';
 import type {DeleteResponse, ImageResponse, Image } from './interface-panel.ts';
@@ -250,7 +249,7 @@ const PanelUserOrAdminPhotos: React.FC = () => {
         <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-200 to-gray-400 font-sans p-4">
             <div className="w-full max-w-4xl bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col">
                 <div className="flex flex-col items-center p-8">
-                    <img src={nexLabLogo} alt="NexLab Logo" className="w-[150px] mb-6" />
+                    <img src="/vidigalcode.png" alt="Vidigal Logo" className="w-[150px] mb-6" />
                     <h2 className="text-2xl font-bold text-gray-800 mb-4">
                         {isAdmin ? 'Admin Photo Panel' : 'User Photo Panel'}
                     </h2>

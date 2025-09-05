@@ -54,7 +54,7 @@ const FinalScreen = ({photo, qrCodeId, onFinalize}: FinalScreenProps) => {
          if (!photo) return;
          const link = document.createElement('a');
          link.href = photo;
-         link.download = `nexlab-photo-${id || 'view'}.png`;
+         link.download = `vidigal-photo-${id || 'view'}.png`;
          document.body.appendChild(link);
          link.click();
          document.body.removeChild(link);
@@ -65,7 +65,7 @@ const FinalScreen = ({photo, qrCodeId, onFinalize}: FinalScreenProps) => {
              const qrImage = qrRef.current.toDataURL('image/png');
              const link = document.createElement('a');
              link.href = qrImage;
-             link.download = `nexlab-qr-${qrCodeId}.png`;
+             link.download = `vidigal-qr-${qrCodeId}.png`;
              document.body.appendChild(link);
              link.click();
              document.body.removeChild(link);

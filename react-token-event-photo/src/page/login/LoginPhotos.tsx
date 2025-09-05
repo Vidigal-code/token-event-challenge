@@ -13,7 +13,6 @@
  */
 import {useState, useEffect, useCallback} from 'react';
 import {useNavigate} from 'react-router-dom';
-import nexLabLogo from '../../../public/nexlab.png';
 import {VITE_API_BACK_END} from '../../api/api.ts';
 import axios from 'axios';
 import type {AuthState, CsrfResponse, LoginResponse} from './interface-login.ts';
@@ -130,7 +129,7 @@ const LoginPhotos: React.FC = () => {
              rounded-xl
             shadow-2xl overflow-hidden flex flex-col">
                 <div className="flex flex-col items-center justify-center flex-grow p-8">
-                    <img src={nexLabLogo} alt="NexLab Logo" className="w-[150px] mb-8"/>
+                    <img src="/vidigalcode.png" alt="Vidigal Logo" className="w-[150px] mb-8"/>
                     <h2 className="text-2xl font-bold text-gray-800 mb-6">Login</h2>
                     {error && (
                         <div className="w-full bg-red-100
