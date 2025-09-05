@@ -7,7 +7,7 @@ import CountdownScreen from './components/CountdownScreen.tsx';
 import ReviewScreen from './components/ReviewScreen.tsx';
 import FinalScreen from './components/FinalScreen.tsx';
 import nexLabLogo from '../../public/nexlab.png';
-import {uploadImage} from "../supabase/supabase-config.ts";
+import {uploadImage} from "../gitpages/gitpage-config.ts";
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {

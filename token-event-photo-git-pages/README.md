@@ -65,7 +65,7 @@ To run this project locally, follow these steps:
 2.  **Clone the repository:**
     ```bash
     git clone https://github.com/Vidigal-code/token-event-challenge/token-event-photo-git-pages-and-supabase.git
-    cd token-event-photo-git-pages-and-supabase
+    cd token-event-photo-git-pages-and-gitpages
     ```
 
 3.  **Install dependencies:**
@@ -79,7 +79,7 @@ To run this project locally, follow these steps:
     -   In your project, go to the **Storage** section and create a new **public bucket** named `photos`.
     -   Navigate to **Project Settings > API**.
     -   Copy the **Project URL** and the **`anon` public key**.
-    -   Paste these values into the `src/supabase/supabase-config.ts` file:
+    -   Paste these values into the `src/supabase/gitpage-config.ts` file:
         ```typescript
         const supabaseUrl = 'YOUR_SUPABASE_URL';
         const supabaseKey = 'YOUR_SUPABASE_ANON_KEY';
@@ -160,7 +160,7 @@ Para executar este projeto localmente, siga estes passos:
 2.  **Clone o repositório:**
     ```bash
     git clone https://github.com/Vidigal-code/token-event-challenge/token-event-photo-git-pages-and-supabase.git
-    cd token-event-photo-git-pages-and-supabase
+    cd token-event-photo-git-pages-and-gitpages
     ```
 
 3.  **Instale as dependências:**
@@ -174,7 +174,7 @@ Para executar este projeto localmente, siga estes passos:
     -   No seu projeto, vá para a seção **Storage** e crie um novo **bucket público** chamado `photos`.
     -   Navegue até **Project Settings > API**.
     -   Copie a **URL do Projeto** e a **chave pública `anon`**.
-    -   Cole esses valores no arquivo `src/supabase/supabase-config.ts`:
+    -   Cole esses valores no arquivo `src/supabase/gitpage-config.ts`:
         ```typescript
         const supabaseUrl = 'SUA_URL_SUPABASE';
         const supabaseKey = 'SUA_CHAVE_ANON_SUPABASE';

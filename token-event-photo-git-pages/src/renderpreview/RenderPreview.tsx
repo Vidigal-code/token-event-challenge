@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { IoExitOutline } from 'react-icons/io5';
-import {getImageById} from "../supabase/supabase-config.ts";
+import {getImageById} from "../gitpages/gitpage-config.ts";
 
 const RenderPreview: React.FC = () => {
     /**
