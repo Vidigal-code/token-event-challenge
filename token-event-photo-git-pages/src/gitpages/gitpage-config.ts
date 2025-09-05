@@ -1,4 +1,4 @@
-const GITHUB_TOKEN = import.meta.env.VITE_GITHUB_TOKEN;
+const GITHUB_TOKEN = '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';
 const REPO_OWNER = 'Vidigal-code';
 const REPO_NAME = 'token-event-challenge';
 const BRANCH = 'main';
