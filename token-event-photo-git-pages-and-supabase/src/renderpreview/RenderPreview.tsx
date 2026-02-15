@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { IoExitOutline } from 'react-icons/io5';
-import {getImageById} from "../supabase/supabase-config.ts";
+import { useImageByIdQuery } from '../features/photo/api/photo-queries.ts';
 
 const RenderPreview: React.FC = () => {
     /**
@@ -32,6 +32,7 @@ const RenderPreview: React.FC = () => {
     };
 
     const qrCodeId = getQrCodeId();
+    const imageQuery = useImageByIdQuery(qrCodeId);
 
     useEffect(() => {
         if (!qrCodeId) {
@@ -40,25 +41,18 @@ const RenderPreview: React.FC = () => {
             return;
         }
 
-        const fetchImage = async () => {
-            try {
-                const imageData = await getImageById(qrCodeId);
-                if (!imageData || !imageData.image) {
-                    setError('No photo found for this QR code.');
-                    setIsLoading(false);
-                    return;
-                }
-                setImageSrc(imageData.image);
-                setIsLoading(false);
-            } catch (err: any) {
-                console.error('Error fetching image:', err);
-                setError('Failed to load photo.');
-                setIsLoading(false);
-            }
-        };
+        if (imageQuery.data?.image) {
+            setImageSrc(imageQuery.data.image);
+            setIsLoading(false);
+            return;
+        }
 
-        fetchImage();
-    }, [qrCodeId]);
+        if (imageQuery.error) {
+            console.error('Error fetching image:', imageQuery.error);
+            setError('Failed to load photo.');
+            setIsLoading(false);
+        }
+    }, [qrCodeId, imageQuery.data, imageQuery.error]);
 
     /**
      * Handles the download of the currently loaded image.

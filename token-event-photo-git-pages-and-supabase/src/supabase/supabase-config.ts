@@ -7,6 +7,7 @@
  * For production, protect your keys and implement rules and authentication.
  */
 import { createClient } from '@supabase/supabase-js';
+import { httpClient } from '../shared/api/http-client';
 
 const supabaseUrl =  'https://mfxwldulvbkrvhryoxos.supabase.co';
 const supabaseKey =  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1meHdsZHVsdmJrcnZocnlveG9zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3MjQxNzMsImV4cCI6MjA2NjMwMDE3M30.3jS0QvZF7c_sPsCAhXbW37rIBxttRU-UXnvY-2ZVCp0';
@@ -54,6 +55,9 @@ export async function getImageById(id: string): Promise<{ image: string } | null
         if (!publicUrl) {
             throw new Error('Public URL not found for the image.');
         }
+
+        // Axios call validates that the public URL is actually reachable.
+        await httpClient.get(publicUrl, { responseType: 'blob' });
 
         return { image: publicUrl };
     } catch (err: any) {

@@ -76,7 +76,7 @@ const RenderPreview: React.FC = () => {
         };
 
         fetchImage();
-    }, [qrCodeId]);
+    }, [qrCodeId, qrCodeUrl]);
 
     /**
      * Handles the download of the currently loaded image.

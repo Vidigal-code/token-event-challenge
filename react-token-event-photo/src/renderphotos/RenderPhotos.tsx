@@ -6,8 +6,8 @@ import PreCaptureScreen from './components/PreCaptureScreen.tsx';
 import CountdownScreen from './components/CountdownScreen.tsx';
 import ReviewScreen from './components/ReviewScreen.tsx';
 import FinalScreen from './components/FinalScreen.tsx';
-import { VITE_API_BACK_END } from '../api/api.ts';
-import axios from 'axios';
+import { httpClient } from '../shared/api/http-client.ts';
+import { useAppSelector } from '../app/store/hooks.ts';
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
@@ -19,11 +19,6 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
     });
 };
 
-interface AuthState {
-    authenticated: boolean;
-    id: string;
-}
-
 const RenderPhotos: React.FC = () => {
 
     const [step, setStep] = useState<number>(1);
@@ -33,7 +28,7 @@ const RenderPhotos: React.FC = () => {
 
     //const [csrfToken, setCsrfToken] = useState<string | null>(null);
 
-    const [authState, setAuthState] = useState<AuthState>({ authenticated: false, id: '0' });
+    const auth = useAppSelector((state) => state.auth);
 
     const webcamRef = useRef<Webcam | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -60,27 +55,6 @@ const RenderPhotos: React.FC = () => {
             setError('Failed to initialize CSRF protection. Please try again.');
         }
     }, []);*/
-
-    const checkAuth = useCallback(() => {
-        axios.get(`${VITE_API_BACK_END}/auth/check`, {
-            withCredentials: true
-        })
-            .then((response) => {
-                setAuthState(response.data);
-                //console.log(response.data.id);
-            })
-            .catch((err) => {
-                console.error('Error checking authentication:', err);
-                setAuthState({ authenticated: false, id: '0' });
-            });
-    }, []);
-
-   /* useEffect(() => {
-        fetchCsrfToken();
-        checkAuth();
-    }, [fetchCsrfToken, checkAuth]);*/
-
-
 
     const startOver = useCallback(() => {
         setError(null);
@@ -154,7 +128,7 @@ const RenderPhotos: React.FC = () => {
             setStep(4);
         }
 
-    }, [startOver, authState.id]);
+    }, [startOver]);
 
 
     const startCapture = useCallback(() => setStep(2), []);
@@ -192,21 +166,21 @@ const RenderPhotos: React.FC = () => {
             const date = now.toISOString().split('T')[0];
             const time = now.toTimeString().split(' ')[0];
 
-            await axios.post(
-                `${VITE_API_BACK_END}/image`,
+            await httpClient.post(
+                '/image',
                 {
                     id: newId,
                     base64: photo,
                     qrCodeId,
                     date,
                     time,
-                    userId: authState.id,
+                    userId: auth.user?.id ?? '0',
                 },
                 {
                     headers: {
                         'Content-Type': 'application/json',
+                        ...(auth.csrfToken ? { 'X-CSRF-Token': auth.csrfToken } : {}),
                     },
-                    withCredentials: true,
                 }
             );
 
@@ -214,16 +188,21 @@ const RenderPhotos: React.FC = () => {
         } catch (err: unknown) {
             console.error('Error upload image:', err);
             const message =
-                axios.isAxiosError(err) && err.response?.data?.message
-                    ? err.response.data.message
+                err &&
+                typeof err === 'object' &&
+                'response' in err &&
+                (err as { response?: { data?: { message?: string } } }).response
+                    ?.data?.message
+                    ? (err as { response: { data: { message: string } } }).response.data
+                          .message
                     : err instanceof Error
-                        ? err.message
-                        : 'An unknown error occurred.';
+                      ? err.message
+                      : 'An unknown error occurred.';
             setError(message);
             setIsLoading(false);
             setStep(4);
         }
-    }, [photo, qrCodeId, authState.id]);
+    }, [photo, qrCodeId, auth.user?.id, auth.csrfToken]);
 
     const renderContent = () => {
         if (error) {
@@ -290,8 +269,6 @@ const RenderPhotos: React.FC = () => {
 
 
     useEffect(() => {
-        checkAuth();
-
         if (!countdownActive) return;
 
         if (countdown === 0) {
@@ -305,7 +282,7 @@ const RenderPhotos: React.FC = () => {
         }, 1000);
 
         return () => clearTimeout(timer);
-    }, [checkAuth, countdownActive, countdown, takePhoto]);
+    }, [countdownActive, countdown, takePhoto]);
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br

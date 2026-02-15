@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import { SecurityHeadersMiddleware } from './security/middlewares/security-headers.middleware';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -56,13 +57,11 @@ async function bootstrap() {
   } else {
     if (isLocalSSL && !sslFilesExist) {
       logger.warn(
-          `SSL is enabled, but certificates not found at ${certPath} or ${keyPath}. Falling back to HTTP.`
+        `SSL is enabled, but certificates not found at ${certPath} or ${keyPath}. Falling back to HTTP.`
       );
     }
     app = await NestFactory.create(AppModule);
   }
-
-
 
   /**
    * Enables Cross-Origin Resource Sharing (CORS) for the application.
@@ -80,16 +79,15 @@ async function bootstrap() {
     credentials: true,
   });
 
-
   /**
    * Apply global validation and transformation for incoming requests.
    */
   app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true, // Remove unknown properties
-        forbidNonWhitelisted: true, // Throw error on unknown properties
-        transform: true, // Auto-convert payloads to DTOs
-      })
+    new ValidationPipe({
+      whitelist: true, // Remove unknown properties
+      forbidNonWhitelisted: true, // Throw error on unknown properties
+      transform: true, // Auto-convert payloads to DTOs
+    })
   );
 
   /**
@@ -107,25 +105,38 @@ async function bootstrap() {
    * Apply security best practices via Helmet headers.
    */
   app.use(
-      helmet({
-        contentSecurityPolicy: {
-          useDefaults: true,
-          directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'"],
-            objectSrc: ["'none'"],
-            styleSrc: ["'self'"],
-            frameAncestors: ["'none'"],
-          },
+    helmet({
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true,
+      },
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+      noSniff: true,
+      frameguard: { action: 'deny' },
+      dnsPrefetchControl: { allow: false },
+      hidePoweredBy: true,
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          styleSrc: ["'self'"],
+          frameAncestors: ["'none'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          connectSrc: ["'self'", process.env.API_FRONT_END ?? "'self'"],
         },
-        crossOriginResourcePolicy: false,
-      })
+      },
+      crossOriginResourcePolicy: false,
+    })
   );
+  app.use(new SecurityHeadersMiddleware().use);
 
   /** Start the application and log the running protocol and address */
   await app.listen(port, host);
   logger.log(
-      `Application started on ${isLocalSSL && sslFilesExist ? 'https' : 'http'}://${host}:${port}`
+    `Application started on ${isLocalSSL && sslFilesExist ? 'https' : 'http'}://${host}:${port}`
   );
 }
 

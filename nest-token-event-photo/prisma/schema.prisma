@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  role          String         @default("user")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  refreshTokens RefreshToken[]
+  images        Image[]
+}
+
+model OutboxEvent {
+  id          String   @id @default(uuid())
+  aggregateId String
+  eventType   String
+  payload     String
+  createdAt   DateTime @default(now())
+  attempts    Int      @default(0)
+  nextAttemptAt DateTime @default(now())
+  lastError   String?
+  failedAt    DateTime?
+  processedAt DateTime?
+
+  @@index([eventType, processedAt, failedAt, nextAttemptAt])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Image {
+  id        String   @id
+  qrCodeId  String   @unique
+  date      String
+  time      String
+  s3Bucket  String
+  s3Key     String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+}
+

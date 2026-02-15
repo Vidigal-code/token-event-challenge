@@ -20,4 +20,4 @@ RUN chmod +x ./entrypoint.sh
 RUN npm install --force
 EXPOSE 3001
 # Start via entrypoint
-CMD ["./entrypoint.sh"]
+CMD ["bash", "./entrypoint.sh"]

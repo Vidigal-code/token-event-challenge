@@ -38,7 +38,7 @@ export class ImageController {
   @Post()
   @Throttle({ default: { limit: 3, ttl: 300 } })
   async saveImage(
-      @Body(ValidationPipe) body: SaveImageDto
+    @Body(ValidationPipe) body: SaveImageDto
   ): Promise<SaveImageResponse> {
     return this.imageService.saveImage(body);
   }
@@ -138,10 +138,13 @@ export class ImageController {
   @Roles(Role.User)
   @UseGuards(RolesGuardService)
   async deleteUserImageByQrCodeId(
-      @Param('qrCodeId') qrCodeId: string,
-      @Req() req: AuthenticatedRequest
+    @Param('qrCodeId') qrCodeId: string,
+    @Req() req: AuthenticatedRequest
   ) {
-    await this.imageService.deleteImageByQrCodeIdAndUserId(qrCodeId, req.user.sub);
+    await this.imageService.deleteImageByQrCodeIdAndUserId(
+      qrCodeId,
+      req.user.sub
+    );
     return {
       statusCode: ImageMessageSuccess.DeletedSuccessfully().statusCode,
       message: ImageMessageSuccess.DeletedSuccessfully().message,

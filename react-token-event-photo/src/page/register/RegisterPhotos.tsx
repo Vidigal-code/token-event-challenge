@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { VITE_API_BACK_END } from '../../api/api.ts';
-import type { AuthState, CsrfResponse, LoginResponse } from '../login/interface-login.ts';
 import { IoExitOutline } from 'react-icons/io5';
+import { useAppDispatch, useAppSelector } from '../../app/store/hooks.ts';
+import { setSession } from '../../entities/auth/model/auth-slice.ts';
+import { useRegisterMutation } from '../../features/auth/api/auth-queries.ts';
+import { useQueryClient } from '@tanstack/react-query';
 
 const RegisterPhotos: React.FC = () => {
 
@@ -23,17 +24,7 @@ const RegisterPhotos: React.FC = () => {
     const [password, setPassword] = useState<string>('TestAAA1#');
 
     /**
-     * CSRF token state to protect against cross-site request forgery.
-     */
-    const [csrfToken, setCsrfToken] = useState<string | null>(null);
-
-    /**
      * Authentication state including authentication status and user ID.
-     */
-    const [authState, setAuthState] = useState<AuthState>({ authenticated: false, id: '0' });
-
-    /**
-     * Error message state to display any registration or CSRF errors.
      */
     const [error, setError] = useState<string | null>(null);
 
@@ -43,24 +34,10 @@ const RegisterPhotos: React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
     const navigate = useNavigate();
-
-    /**
-     * Fetches CSRF token from backend and sets it in state.
-     * Handles errors by logging and setting error state.
-     */
-    const fetchCsrfToken = useCallback(() => {
-        axios
-            .get<CsrfResponse>(`${VITE_API_BACK_END}/auth/csrf`, {
-                withCredentials: true,
-            })
-            .then((response) => {
-                setCsrfToken(response.data.csrfToken);
-            })
-            .catch((error) => {
-                console.error('Error fetching CSRF token:', error);
-                setError('Failed to initialize CSRF protection. Please try again.');
-            });
-    }, []);
+    const dispatch = useAppDispatch();
+    const auth = useAppSelector((state) => state.auth);
+    const queryClient = useQueryClient();
+    const registerMutation = useRegisterMutation();
 
     /**
      * Handles the user registration form submission.
@@ -73,52 +50,58 @@ const RegisterPhotos: React.FC = () => {
     const handleRegister = useCallback(
         (e: React.FormEvent) => {
             e.preventDefault();
-            if (!csrfToken) {
+            if (!auth.csrfToken) {
                 setError('CSRF token is missing. Please refresh the page.');
                 return;
             }
             setIsLoading(true);
             setError(null);
 
-            axios
-                .post<LoginResponse>(
-                    `${VITE_API_BACK_END}/auth/register`,
-                    { name, email, password },
-                    {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-Token': csrfToken,
-                        },
-                        withCredentials: true,
-                    }
-                )
-                .then((response) => {
-                    setAuthState({ authenticated: true, id: response.data.user.id });
-                    setCsrfToken(response.data.csrfToken);
-                    navigate('/login');
-                })
-                .catch((error) => {
-                    const message =
-                        error.response?.data?.message ||
-                        error.message ||
-                        'An unknown error occurred.';
-                    console.error('Registration error:', message);
-                    setError(message);
-                })
-                .finally(() => {
-                    setIsLoading(false);
-                });
+            registerMutation.mutate(
+                { name, email, password, csrfToken: auth.csrfToken },
+                {
+                    onSuccess: (data) => {
+                        dispatch(
+                            setSession({
+                                initialized: true,
+                                authenticated: true,
+                                user: data.user,
+                                csrfToken: data.csrfToken,
+                            })
+                        );
+                        queryClient.setQueryData(['auth', 'csrf'], data.csrfToken);
+                        queryClient.setQueryData(['auth', 'check'], {
+                            authenticated: true,
+                            id: data.user.id,
+                        });
+                        queryClient.setQueryData(['auth', 'sync-health'], {
+                            authenticated: true,
+                            id: data.user.id,
+                            role: data.user.role,
+                            hasAccessTokenCookie: true,
+                            hasRefreshTokenCookie: true,
+                            hasCsrfCookie: true,
+                            synced: true,
+                        });
+                        queryClient.invalidateQueries({ queryKey: ['panel', 'images'] });
+                        navigate('/panel');
+                    },
+                    onError: (error: any) => {
+                        const message =
+                            error.response?.data?.message ||
+                            error.message ||
+                            'An unknown error occurred.';
+                        console.error('Registration error:', message);
+                        setError(message);
+                    },
+                    onSettled: () => {
+                        setIsLoading(false);
+                    },
+                }
+            );
         },
-        [name, email, password, csrfToken, navigate]
+        [name, email, password, auth.csrfToken, navigate, dispatch, registerMutation, queryClient]
     );
-
-    /**
-     * Runs once on component mount to fetch CSRF token.
-     */
-    useEffect(() => {
-        fetchCsrfToken();
-    }, [fetchCsrfToken]);
-
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-200 to-gray-400 font-sans p-4">
@@ -179,9 +162,9 @@ const RegisterPhotos: React.FC = () => {
                         </div>
                         <button
                             type="submit"
-                            disabled={isLoading || !csrfToken}
+                            disabled={isLoading || !auth.csrfToken}
                             className={`w-full py-3 mt-4 text-white font-semibold rounded-lg transition ${
-                                isLoading || !csrfToken
+                                isLoading || !auth.csrfToken
                                     ? 'bg-gray-400 cursor-not-allowed'
                                     : 'bg-gray-800 hover:bg-gray-900'
                             }`}
@@ -225,11 +208,6 @@ const RegisterPhotos: React.FC = () => {
                             Return
                         </button>
                     </div>
-                    {authState.authenticated && (
-                        <p className="mt-4 text-green-600 text-center">
-                            Registration successful! Redirecting to login...
-                        </p>
-                    )}
                 </div>
                 <div className="w-full p-4 bg-gray-100 text-center text-gray-600">
                     we make tech simple

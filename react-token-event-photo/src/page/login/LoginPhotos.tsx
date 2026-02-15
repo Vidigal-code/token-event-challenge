@@ -11,12 +11,13 @@
  * Uses React hooks (useState, useEffect, useCallback) for state management and side effects.
  * Axios is used for HTTP requests with credentials.
  */
-import {useState, useEffect, useCallback} from 'react';
+import {useState, useCallback} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {VITE_API_BACK_END} from '../../api/api.ts';
-import axios from 'axios';
-import type {AuthState, CsrfResponse, LoginResponse} from './interface-login.ts';
 import {IoExitOutline} from 'react-icons/io5';
+import { useAppDispatch, useAppSelector } from '../../app/store/hooks.ts';
+import { setSession } from '../../entities/auth/model/auth-slice.ts';
+import { useLoginMutation } from '../../features/auth/api/auth-queries.ts';
+import { useQueryClient } from '@tanstack/react-query';
 
 const LoginPhotos: React.FC = () => {
 
@@ -31,16 +32,6 @@ const LoginPhotos: React.FC = () => {
     const [password, setPassword] = useState<string>('TestAAA1#');
 
     /**
-     * CSRF token state for protection against cross-site request forgery
-     */
-    const [csrfToken, setCsrfToken] = useState<string | null>(null);
-
-    /**
-     * Authentication state including whether authenticated and user ID
-     */
-    const [authState, setAuthState] = useState<AuthState>({authenticated: false, id: '0'});
-
-    /**
      * Error message state for login or CSRF token fetching errors
      */
     const [error, setError] = useState<string | null>(null);
@@ -51,23 +42,10 @@ const LoginPhotos: React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
     const navigate = useNavigate();
-
-    /**
-     * Fetches the CSRF token from the backend
-     * and stores it in state.
-     */
-    const fetchCsrfToken = useCallback(() => {
-        axios.get<CsrfResponse>(`${VITE_API_BACK_END}/auth/csrf`, {
-            withCredentials: true,
-        })
-            .then((response) => {
-                setCsrfToken(response.data.csrfToken);
-            })
-            .catch((error) => {
-                console.error('Error fetching CSRF token:', error);
-                setError('Failed to initialize CSRF protection. Please try again.');
-            });
-    }, []);
+    const dispatch = useAppDispatch();
+    const auth = useAppSelector((state) => state.auth);
+    const queryClient = useQueryClient();
+    const loginMutation = useLoginMutation();
 
     /**
      * Handles the login form submission.
@@ -78,7 +56,7 @@ const LoginPhotos: React.FC = () => {
     const handleLogin = useCallback((e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!csrfToken) {
+        if (!auth.csrfToken) {
             setError('CSRF token is missing. Please refresh the page.');
             return;
         }
@@ -86,41 +64,49 @@ const LoginPhotos: React.FC = () => {
         setIsLoading(true);
         setError(null);
 
-        axios.post<LoginResponse>(
-            `${VITE_API_BACK_END}/auth/login`,
-            {email, password},
+        loginMutation.mutate(
+            { email, password, csrfToken: auth.csrfToken },
             {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': csrfToken,
+                onSuccess: (data) => {
+                    dispatch(
+                        setSession({
+                            initialized: true,
+                            authenticated: true,
+                            user: data.user,
+                            csrfToken: data.csrfToken,
+                        })
+                    );
+                    queryClient.setQueryData(['auth', 'csrf'], data.csrfToken);
+                    queryClient.setQueryData(['auth', 'check'], {
+                        authenticated: true,
+                        id: data.user.id,
+                    });
+                    queryClient.setQueryData(['auth', 'sync-health'], {
+                        authenticated: true,
+                        id: data.user.id,
+                        role: data.user.role,
+                        hasAccessTokenCookie: true,
+                        hasRefreshTokenCookie: true,
+                        hasCsrfCookie: true,
+                        synced: true,
+                    });
+                    queryClient.invalidateQueries({ queryKey: ['panel', 'images'] });
+                    navigate('/panel');
                 },
-                withCredentials: true,
+                onError: (error: any) => {
+                    const message =
+                        error.response?.data?.message ||
+                        error.message ||
+                        'An unknown error occurred.';
+                    console.error('Login error:', message);
+                    setError(message);
+                },
+                onSettled: () => {
+                    setIsLoading(false);
+                },
             }
-        )
-            .then(response => {
-                setAuthState({authenticated: true, id: response.data.user.id});
-                setCsrfToken(response.data.csrfToken);
-                navigate('/panel');
-            })
-            .catch(error => {
-                const message =
-                    error.response?.data?.message ||
-                    error.message ||
-                    'An unknown error occurred.';
-                console.error('Login error:', message);
-                setError(message);
-            })
-            .finally(() => {
-                setIsLoading(false);
-            });
-    }, [email, password, csrfToken, navigate]);
-
-    /**
-     * Fetch the CSRF token when the component mounts.
-     */
-    useEffect(() => {
-        fetchCsrfToken();
-    }, [fetchCsrfToken]);
+        );
+    }, [auth.csrfToken, loginMutation, email, password, dispatch, navigate, queryClient]);
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br
@@ -171,9 +157,9 @@ const LoginPhotos: React.FC = () => {
                         </div>
                         <button
                             type="submit"
-                            disabled={isLoading || !csrfToken}
+                            disabled={isLoading || !auth.csrfToken}
                             className={`w-full py-3 mt-4 text-white font-semibold rounded-lg transition ${
-                                isLoading || !csrfToken
+                                isLoading || !auth.csrfToken
                                     ? 'bg-gray-400 cursor-not-allowed'
                                     : 'bg-gray-800 hover:bg-gray-900'
                             }`}
@@ -211,11 +197,6 @@ const LoginPhotos: React.FC = () => {
                             Return
                         </button>
                     </div>
-                    {authState.authenticated && (
-                        <p className="mt-4 text-green-600 text-center">
-                            Login successful! Redirecting...
-                        </p>
-                    )}
                 </div>
                 <div className="w-full p-4 bg-gray-100 text-center text-gray-600">
                     we make tech simple

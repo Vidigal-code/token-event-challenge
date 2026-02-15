@@ -1,24 +1,22 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import { User, UserDocument } from '../../users/schemas/user.schema';
-import {
-  RefreshToken,
-  RefreshTokenDocument,
-} from '../../users/schemas/refresh-token.schema';
 import { JweService } from './jwe.service';
 import { Role } from '../utilities/roles.auth';
 import { AuthMessageErrors } from '../message/errors/auth-message.errors';
 import { JwtPayload } from '../utilities/authenticated-request';
 import { TokenResponse } from '../utilities/interface.auth';
+import {
+  AUTH_REPOSITORY,
+  AuthRepositoryPort,
+} from '../domain/ports/auth-repository.port';
+import { AuthUser } from '../domain/entities/auth-user.entity';
 
 /**
  * Service responsible for handling authentication logic, including user creation,
  * login, token refresh, password updates, and token invalidation.
- * Integrates with Mongoose for database operations, JWT for token generation,
+ * Integrates with a persistence port (Prisma adapter), JWT for token generation,
  * and JWE for refresh token encryption.
  */
 @Injectable()
@@ -28,16 +26,14 @@ export class AuthService {
   /**
    * Initializes the AuthService with dependencies for database access,
    * JWT handling, configuration, and JWE encryption.
-   * @param userModel - Mongoose model for User documents.
-   * @param refreshTokenModel - Mongoose model for RefreshToken documents.
+   * @param authRepository - Auth repository port implemented by infrastructure adapter.
    * @param jwtService - Service for generating and verifying JWT tokens.
    * @param configService - Service for accessing environment variables.
    * @param jweService - Service for encrypting and decrypting refresh tokens.
    */
   constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @InjectModel(RefreshToken.name)
-    private refreshTokenModel: Model<RefreshTokenDocument>,
+    @Inject(AUTH_REPOSITORY)
+    private readonly authRepository: AuthRepositoryPort,
     private jwtService: JwtService,
     private configService: ConfigService,
     private jweService: JweService
@@ -58,24 +54,28 @@ export class AuthService {
     email: string,
     password: string,
     role: string = Role.User
-  ): Promise<TokenResponse & { user: UserDocument }> {
-    const existingUser = await this.userModel.findOne({ email }).exec();
+  ): Promise<
+    TokenResponse & { user: { id: string; email: string; role: string } }
+  > {
+    const existingUser = await this.authRepository.findUserByEmail(email);
     if (existingUser) {
       throw AuthMessageErrors.UserAlreadyExists();
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new this.userModel({
+    const savedUser = await this.authRepository.createUser({
       name,
       email,
-      password: hashedPassword,
+      passwordHash: hashedPassword,
       role,
     });
-    const savedUser = await user.save();
 
     const tokens = await this.generateTokens(savedUser);
-    await this.storeRefreshToken(savedUser._id.toString(), tokens.refreshToken);
-    return { ...tokens, user: savedUser };
+    await this.storeRefreshToken(savedUser.id, tokens.refreshToken);
+    return {
+      ...tokens,
+      user: { id: savedUser.id, email: savedUser.email, role: savedUser.role },
+    };
   }
 
   /**
@@ -89,20 +89,25 @@ export class AuthService {
   async login(
     email: string,
     password: string
-  ): Promise<TokenResponse & { user: UserDocument }> {
-    const user = await this.userModel.findOne({ email }).exec();
+  ): Promise<
+    TokenResponse & { user: { id: string; email: string; role: string } }
+  > {
+    const user = await this.authRepository.findUserByEmail(email);
     if (!user) {
       throw AuthMessageErrors.InvalidCredentials();
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
       throw AuthMessageErrors.InvalidCredentials();
     }
 
     const tokens = await this.generateTokens(user);
-    await this.storeRefreshToken(user._id.toString(), tokens.refreshToken);
-    return { ...tokens, user };
+    await this.storeRefreshToken(user.id, tokens.refreshToken);
+    return {
+      ...tokens,
+      user: { id: user.id, email: user.email, role: user.role },
+    };
   }
 
   /**
@@ -119,24 +124,22 @@ export class AuthService {
 
       const payload: JwtPayload = this.jwtService.verify(decrypted);
 
-      const storedToken = await this.refreshTokenModel
-        .findOne({
-          token: refreshToken,
-          userId: payload.sub,
-        })
-        .exec();
-      if (!storedToken || storedToken.expiresAt < new Date()) {
+      const hasValidToken = await this.authRepository.findValidRefreshToken({
+        token: refreshToken,
+        userId: payload.sub,
+      });
+      if (!hasValidToken) {
         throw AuthMessageErrors.InvalidToken();
       }
 
-      const user = await this.userModel.findById(payload.sub).exec();
+      const user = await this.authRepository.findUserById(payload.sub);
       if (!user) {
         throw AuthMessageErrors.InvalidToken();
       }
 
-      await this.refreshTokenModel.deleteOne({ token: refreshToken }).exec();
+      await this.authRepository.invalidateRefreshToken(refreshToken);
       const newTokens = await this.generateTokens(user);
-      await this.storeRefreshToken(user._id.toString(), newTokens.refreshToken);
+      await this.storeRefreshToken(user.id, newTokens.refreshToken);
       return newTokens;
     } catch (e) {
       this.logger.error(`Refresh token error: ${e.message}`);
@@ -158,18 +161,21 @@ export class AuthService {
     oldPassword: string,
     newPassword: string
   ): Promise<void> {
-    const user = await this.userModel.findById(userId).exec();
+    const user = await this.authRepository.findUserById(userId);
     if (!user) {
       throw AuthMessageErrors.UserNotFound();
     }
 
-    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      oldPassword,
+      user.passwordHash
+    );
     if (!isPasswordValid) {
       throw AuthMessageErrors.InvalidCredentials();
     }
 
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    await this.authRepository.updateUserPassword(userId, hashedNewPassword);
     await this.invalidateUserTokens(userId);
   }
 
@@ -178,7 +184,7 @@ export class AuthService {
    * @param refreshToken - The refresh token to invalidate.
    */
   async invalidateRefreshToken(refreshToken: string): Promise<void> {
-    await this.refreshTokenModel.deleteOne({ token: refreshToken }).exec();
+    await this.authRepository.invalidateRefreshToken(refreshToken);
   }
 
   /**
@@ -186,7 +192,7 @@ export class AuthService {
    * @param userId - The ID of the user whose tokens should be invalidated.
    */
   async invalidateUserTokens(userId: string): Promise<void> {
-    await this.refreshTokenModel.deleteMany({ userId }).exec();
+    await this.authRepository.invalidateUserTokens(userId);
   }
 
   /**
@@ -195,9 +201,9 @@ export class AuthService {
    * @param user - The user document to generate tokens for.
    * @returns An object containing the access and refresh tokens.
    */
-  private async generateTokens(user: UserDocument): Promise<TokenResponse> {
+  private async generateTokens(user: AuthUser): Promise<TokenResponse> {
     const payload: JwtPayload = {
-      sub: user._id.toString(),
+      sub: user.id,
       email: user.email,
       role: user.role,
     };
@@ -257,8 +263,7 @@ export class AuthService {
     }
 
     await this.invalidateUserTokens(userId);
-
-    await this.refreshTokenModel.create({
+    await this.authRepository.storeRefreshToken({
       userId,
       token: refreshToken,
       expiresAt,

@@ -1,4 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
@@ -21,9 +26,9 @@ export class RolesGuardService implements CanActivate {
    * @param configService - Provides configuration variables like JWT_SECRET
    */
   constructor(
-      private readonly jwtService: JwtService,
-      private readonly reflector: Reflector,
-      private readonly configService: ConfigService
+    private readonly jwtService: JwtService,
+    private readonly reflector: Reflector,
+    private readonly configService: ConfigService
   ) {
     this.logger.log('RolesGuardService initialized. JwtService:', !!jwtService);
   }
@@ -59,8 +64,8 @@ export class RolesGuardService implements CanActivate {
     }
 
     const requiredRoles = this.reflector.getAllAndOverride<string[]>(
-        ROLES_KEY,
-        [context.getHandler(), context.getClass()]
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()]
     );
 
     if (!requiredRoles) {
@@ -70,13 +75,17 @@ export class RolesGuardService implements CanActivate {
     const { user } = request;
 
     if (!user || !user.role) {
-      this.logger.warn(`User or role missing in payload: ${JSON.stringify(user)}`);
+      this.logger.warn(
+        `User or role missing in payload: ${JSON.stringify(user)}`
+      );
       throw AuthMessageErrors.UserNotAuthenticated();
     }
 
     const hasRole = requiredRoles.some((role) => user.role === role);
     if (!hasRole) {
-      this.logger.warn(`User ${user.sub} lacks required role: ${requiredRoles.join(', ')}`);
+      this.logger.warn(
+        `User ${user.sub} lacks required role: ${requiredRoles.join(', ')}`
+      );
     }
 
     return hasRole;

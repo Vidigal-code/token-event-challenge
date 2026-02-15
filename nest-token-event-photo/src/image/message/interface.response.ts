@@ -1,5 +1,5 @@
-import { ImageDocument } from '../schemas/image.schema';
 import { HttpStatus } from '@nestjs/common';
+import { ImageEntity } from '../domain/entities/image.entity';
 
 /**
  * Interface for the response of a successful image save operation.
@@ -7,9 +7,9 @@ import { HttpStatus } from '@nestjs/common';
  */
 export interface SaveImageResponse {
   /**
-   * The saved image document from MongoDB.
+   * The saved image metadata.
    */
-  image: ImageDocument;
+  image: ImageEntity;
 
   /**
    * The HTTP status code of the response.

@@ -10,6 +10,55 @@
 An interactive and secure photo booth application developed for events. It allows participants to take photos, apply a custom frame, and download them via a QR code. The project includes a complete backend with robust security features and an administrative panel for photo management.
 
 
+## Quick Start (Docker + SSL Example)
+
+This repository is ready to run locally with Docker, keeping `ssl-example` working out of the box.
+
+### 1) Create root env file
+
+Use a single root env file for the full stack:
+
+- copy `.env.example` to `.env`
+
+Recommended values in root `.env`:
+
+- `LOCAL_CERTIFICATE=true`
+- `API_FRONT_END=https://localhost:3000`
+- `VITE_API_BACK_END=https://localhost:3001`
+
+### 2) Start stack
+
+From repo root:
+
+```bash
+docker compose up --build
+```
+
+Services started:
+
+- Frontend: `https://localhost:3000`
+- Backend: `https://localhost:3001` (falls back to HTTP if cert is unavailable)
+- PostgreSQL (Prisma): `localhost:5432`
+- MongoDB: `localhost:27017`
+- LocalStack (S3): `localhost:4566`
+
+### 3) SSL behavior
+
+`docker-compose.yml` mounts test certs from `ssl-example` directly into backend/frontend SSL paths.
+No manual rename/copy is required in Docker mode.
+
+### 4) Prisma in Docker
+
+The backend container entrypoint runs:
+
+- `npx prisma db push`
+- `npx prisma generate`
+- `npm run admin:ensure`
+
+This keeps the Prisma schema synced for local development with clean startup.
+It also guarantees an admin user exists on every local boot (idempotent upsert).
+
+
 
 <details>
 <summary><strong>🇬🇧 English Description</strong></summary>
@@ -21,7 +70,7 @@ This project simulates an interactive photo activation for an event booth. The p
 The system is composed of:
 - **Frontend (React)**: An interactive interface for the photo capture flow.
 - **Backend (NestJS)**: A secure API for user authentication, image processing, and data persistence.
-- **Database (MongoDB)**: Stores image metadata and user information.
+- **Databases (PostgreSQL + MongoDB)**: PostgreSQL (Prisma) for auth/core entities and MongoDB for legacy compatibility.
 - **File Storage (AWS S3 / LocalStack)**: Stores the generated photos.
 
 ### ✨ Key Features
@@ -45,8 +94,8 @@ The system is composed of:
 
 | Area      | Technology / Library                                                              |
 |-----------|-----------------------------------------------------------------------------------|
-| **Backend**   | NestJS, TypeScript, MongoDB (Mongoose), Docker, LocalStack (for S3), JWT, JWE, bcrypt, `class-validator`, `double-csrf` |
-| **Frontend**  | React, Vite, TypeScript, Tailwind CSS, Axios, React Router, `react-webcam`, `qrcode` |
+| **Backend**   | NestJS, TypeScript, Prisma, PostgreSQL, MongoDB (legacy compatibility), Docker, LocalStack (for S3), JWT, JWE, bcrypt, `class-validator`, `double-csrf` |
+| **Frontend**  | React, Vite, TypeScript, Tailwind CSS, Axios, React Router, `react-webcam`, `qrcode`, React Query, Redux Toolkit |
 
 ### 🚀 Getting Started
 
@@ -131,6 +180,7 @@ The main API routes are:
     - `POST /logout`: Invalidate tokens and log out.
     - `GET /check`: Check if the user is authenticated.
     - `GET /csrf`: Get a CSRF token.
+    - `GET /sync-health`: Validate session synchronization state (auth + cookies).
 - **Images (`/image`)**:
     - `POST /`: Upload a new photo.
     - `GET /qr/:qrCodeId`: Get a photo by its QR code ID.
@@ -151,7 +201,7 @@ Este projeto simula uma ativação fotográfica interativa para um estande de ev
 O sistema é composto por:
 - **Frontend (React)**: Uma interface interativa para o fluxo de captura de fotos.
 - **Backend (NestJS)**: Uma API segura para autenticação de usuários, processamento de imagens e persistência de dados.
-- **Banco de Dados (MongoDB)**: Armazena metadados de imagens e informações de usuários.
+- **Bancos de Dados (PostgreSQL + MongoDB)**: PostgreSQL (Prisma) para autenticação/entidades centrais e MongoDB para compatibilidade legada.
 - **Armazenamento de Arquivos (AWS S3 / LocalStack)**: Armazena as fotos geradas.
 
 ### ✨ Principais Funcionalidades
@@ -175,8 +225,8 @@ O sistema é composto por:
 
 | Área      | Tecnologia / Biblioteca                                                              |
 |-----------|-----------------------------------------------------------------------------------|
-| **Backend**   | NestJS, TypeScript, MongoDB (Mongoose), Docker, LocalStack (para S3), JWT, JWE, bcrypt, `class-validator`, `double-csrf` |
-| **Frontend**  | React, Vite, TypeScript, Tailwind CSS, Axios, React Router, `react-webcam`, `qrcode` |
+| **Backend**   | NestJS, TypeScript, Prisma, PostgreSQL, MongoDB (compatibilidade legada), Docker, LocalStack (para S3), JWT, JWE, bcrypt, `class-validator`, `double-csrf` |
+| **Frontend**  | React, Vite, TypeScript, Tailwind CSS, Axios, React Router, `react-webcam`, `qrcode`, React Query, Redux Toolkit |
 
 ### 🚀 Como Começar
 
@@ -261,6 +311,7 @@ As principais rotas da API são:
     - `POST /logout`: Invalida os tokens e faz logout.
     - `GET /check`: Verifica se o usuário está autenticado.
     - `GET /csrf`: Obtém um token CSRF.
+    - `GET /sync-health`: Valida o estado de sincronização da sessão (auth + cookies).
 - **Imagens (`/image`)**:
     - `POST /`: Faz o upload de uma nova foto.
     - `GET /qr/:qrCodeId`: Obtém uma foto pelo seu ID de QR code.

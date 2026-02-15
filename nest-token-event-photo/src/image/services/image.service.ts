@@ -1,7 +1,9 @@
-import {HttpStatus, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Image, ImageDocument } from '../schemas/image.schema';
+import {
+  HttpStatus,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { AwsService } from '../../aws/aws.service';
 import {
   PutObjectCommand,
@@ -21,10 +23,17 @@ import {
   SaveImageResponse,
 } from '../message/interface.response';
 import { UnauthorizedException } from '@nestjs/common';
+import {
+  IMAGE_REPOSITORY,
+  ImageRepositoryPort,
+} from '../domain/ports/image-repository.port';
+import { ImageEntity } from '../domain/entities/image.entity';
+import { EventBus } from '@nestjs/cqrs';
+import { ImageSavedEvent } from '../domain/events/image-saved.event';
 
 /**
  * Service for managing image operations.
- * Handles saving, retrieving, and deleting images from S3 and their metadata in MongoDB.
+ * Handles saving, retrieving, and deleting images from S3 and persisted metadata.
  */
 @Injectable()
 export class ImageService {
@@ -35,24 +44,26 @@ export class ImageService {
 
   /**
    * Constructs the ImageService with required dependencies.
-   * @param imageModel - Mongoose model for the Image schema.
+   * @param imageRepository - Hexagonal persistence port for image metadata.
    * @param localstackService - AWS service for interacting with S3 (LocalStack).
    * @throws InternalServerErrorException - If AwsService is not properly initialized.
    */
   constructor(
-      @InjectModel(Image.name) private imageModel: Model<ImageDocument>,
-      private localstackService: AwsService
+    @Inject(IMAGE_REPOSITORY)
+    private readonly imageRepository: ImageRepositoryPort,
+    private readonly eventBus: EventBus,
+    private localstackService: AwsService
   ) {
     if (
-        !this.localstackService.s3Client ||
-        !this.localstackService.bucketName
+      !this.localstackService.s3Client ||
+      !this.localstackService.bucketName
     ) {
       throw new InternalServerErrorException(
-          'AwsService is not properly initialized'
+        'AwsService is not properly initialized'
       );
     }
     this.logger.log(
-        `ImageService initialized with bucket: ${this.localstackService.bucketName}`
+      `ImageService initialized with bucket: ${this.localstackService.bucketName}`
     );
   }
 
@@ -98,19 +109,19 @@ export class ImageService {
       try {
         await this.localstackService.s3Client.send(uploadCommand);
         this.logger.log(
-            `Successfully uploaded image to S3: ${bucketName}/${s3Key}`
+          `Successfully uploaded image to S3: ${bucketName}/${s3Key}`
         );
         break;
       } catch (error) {
         attempts++;
         this.logger.warn(
-            `S3 Upload Error (Attempt ${attempts}/${maxAttempts} for ${bucketName}/${s3Key}):`,
-            error
+          `S3 Upload Error (Attempt ${attempts}/${maxAttempts} for ${bucketName}/${s3Key}):`,
+          error
         );
         if (attempts === maxAttempts) {
           this.logger.error(
-              `S3 Upload Error after ${maxAttempts} retries:`,
-              error
+            `S3 Upload Error after ${maxAttempts} retries:`,
+            error
           );
           throw ImageMessageException.S3UploadFailed();
         }
@@ -118,17 +129,45 @@ export class ImageService {
       }
     }
 
-    const newImage = new this.imageModel({
-      id,
-      qrCodeId,
-      date,
-      time,
-      s3Bucket: bucketName,
-      s3Key,
-      userId,
-    });
-
-    const savedImage = await newImage.save();
+    let savedImage: ImageEntity;
+    try {
+      savedImage = await this.imageRepository.createImage({
+        id,
+        qrCodeId,
+        date,
+        time,
+        s3Bucket: bucketName,
+        s3Key,
+        userId,
+      });
+      this.eventBus.publish(
+        new ImageSavedEvent(
+          savedImage.id,
+          savedImage.qrCodeId,
+          savedImage.userId
+        )
+      );
+    } catch (dbError) {
+      // Compensating rollback: remove the uploaded object if metadata persistence fails.
+      try {
+        await this.localstackService.s3Client.send(
+          new DeleteObjectCommand({
+            Bucket: bucketName,
+            Key: s3Key,
+          })
+        );
+      } catch (rollbackError) {
+        this.logger.error(
+          `Rollback failed for ${bucketName}/${s3Key}`,
+          rollbackError
+        );
+      }
+      this.logger.error(
+        `Rollback completed for ${bucketName}/${s3Key} after DB failure`,
+        dbError
+      );
+      throw ImageMessageException.DatabaseOperationFailed();
+    }
 
     return {
       image: savedImage,
@@ -145,22 +184,22 @@ export class ImageService {
   private async ensureBucketExists(bucketName: string): Promise<void> {
     try {
       const listBuckets = await this.localstackService.s3Client.send(
-          new ListBucketsCommand({})
+        new ListBucketsCommand({})
       );
       const bucketExists = listBuckets.Buckets?.some(
-          (b) => b.Name === bucketName
+        (b) => b.Name === bucketName
       );
       if (!bucketExists) {
         this.logger.log(`Creating bucket ${bucketName}`);
         await this.localstackService.s3Client.send(
-            new CreateBucketCommand({ Bucket: bucketName })
+          new CreateBucketCommand({ Bucket: bucketName })
         );
         this.logger.log(`Bucket ${bucketName} created successfully`);
       }
     } catch (error) {
       this.logger.error(
-          `Failed to verify or create bucket ${bucketName}:`,
-          error
+        `Failed to verify or create bucket ${bucketName}:`,
+        error
       );
       throw ImageMessageException.S3UploadFailed();
     }
@@ -179,7 +218,8 @@ export class ImageService {
       throw ImageMessageException.MissingQrCodeId();
     }
 
-    const imageMetadata = await this.imageModel.findOne({ qrCodeId }).exec();
+    const imageMetadata =
+      await this.imageRepository.findImageByQrCodeId(qrCodeId);
 
     if (!imageMetadata) {
       throw ImageMessageException.ImageMetadataNotFound(qrCodeId);
@@ -199,7 +239,7 @@ export class ImageService {
     while (attempts < maxAttempts) {
       try {
         const s3Object =
-            await this.localstackService.s3Client.send(getObjectCommand);
+          await this.localstackService.s3Client.send(getObjectCommand);
         const streamBody = s3Object.Body as Readable;
 
         const chunks: Uint8Array[] = [];
@@ -209,19 +249,19 @@ export class ImageService {
 
         const buffer = Buffer.concat(chunks);
         this.logger.log(
-            `Successfully retrieved image from S2913: ${imageMetadata.s3Key}`
+          `Successfully retrieved image from S2913: ${imageMetadata.s3Key}`
         );
         return { base64: `data:image/png;base64,${buffer.toString('base64')}` };
       } catch (error) {
         attempts++;
         this.logger.warn(
-            `S3 GetObject Error (Attempt ${attempts}/${maxAttempts} for ${imageMetadata.s3Key}):`,
-            error
+          `S3 GetObject Error (Attempt ${attempts}/${maxAttempts} for ${imageMetadata.s3Key}):`,
+          error
         );
         if (attempts === maxAttempts) {
           this.logger.error(
-              `S3 GetObject Error after ${maxAttempts} retries:`,
-              error
+            `S3 GetObject Error after ${maxAttempts} retries:`,
+            error
           );
           throw ImageMessageException.S3RetrievalFailed(imageMetadata.s3Key);
         }
@@ -236,13 +276,16 @@ export class ImageService {
    * @throws NotFoundException - If no images are found in the database.
    * @throws InternalServerErrorException - If the database query fails.
    */
-  async getAllImages(): Promise<ImageDocument[]> {
+  async getAllImages(): Promise<ImageEntity[]> {
     try {
-      const images = await this.imageModel.find().exec();
+      const images = await this.imageRepository.findAllImages();
       if (!images || images.length === 0) {
-        throw ImageMessageException.NoImagesFound();
+        this.logger.log('No images found. Returning empty list.');
+        return [];
       }
-      this.logger.log(`Successfully retrieved ${images.length} images from MongoDB`);
+      this.logger.log(
+        `Successfully retrieved ${images.length} images from MongoDB`
+      );
       return images;
     } catch (error) {
       this.logger.error('Failed to retrieve images from MongoDB:', error);
@@ -262,7 +305,8 @@ export class ImageService {
       throw ImageMessageException.MissingQrCodeId();
     }
 
-    const imageMetadata = await this.imageModel.findOne({ qrCodeId }).exec();
+    const imageMetadata =
+      await this.imageRepository.findImageByQrCodeId(qrCodeId);
     if (!imageMetadata) {
       throw ImageMessageException.ImageMetadataNotFound(qrCodeId);
     }
@@ -282,19 +326,19 @@ export class ImageService {
       try {
         await this.localstackService.s3Client.send(deleteCommand);
         this.logger.log(
-            `Successfully deleted image from S3: ${imageMetadata.s3Key}`
+          `Successfully deleted image from S3: ${imageMetadata.s3Key}`
         );
         break;
       } catch (error) {
         attempts++;
         this.logger.warn(
-            `S3 DeleteObject Error (Attempt ${attempts}/${maxAttempts} for ${imageMetadata.s3Key}):`,
-            error
+          `S3 DeleteObject Error (Attempt ${attempts}/${maxAttempts} for ${imageMetadata.s3Key}):`,
+          error
         );
         if (attempts === maxAttempts) {
           this.logger.error(
-              `S3 DeleteObject Error after ${maxAttempts} retries:`,
-              error
+            `S3 DeleteObject Error after ${maxAttempts} retries:`,
+            error
           );
           throw ImageMessageException.S3DeletionFailed(imageMetadata.s3Key);
         }
@@ -303,12 +347,14 @@ export class ImageService {
     }
 
     try {
-      await this.imageModel.deleteOne({ qrCodeId }).exec();
-      this.logger.log(`Successfully deleted image metadata for qrCodeId: ${qrCodeId}`);
+      await this.imageRepository.deleteImageByQrCodeId(qrCodeId);
+      this.logger.log(
+        `Successfully deleted image metadata for qrCodeId: ${qrCodeId}`
+      );
     } catch (error) {
       this.logger.error(
-          `Failed to delete image metadata for qrCodeId: ${qrCodeId}`,
-          error
+        `Failed to delete image metadata for qrCodeId: ${qrCodeId}`,
+        error
       );
       throw ImageMessageException.DatabaseOperationFailed();
     }
@@ -321,16 +367,24 @@ export class ImageService {
    * @throws NotFoundException - If no images are found for the user ID.
    * @throws InternalServerErrorException - If the database query fails.
    */
-  async getImagesByUserId(userId: string): Promise<ImageDocument[]> {
+  async getImagesByUserId(userId: string): Promise<ImageEntity[]> {
     try {
-      const images = await this.imageModel.find({ userId }).exec();
+      const images = await this.imageRepository.findImagesByUserId(userId);
       if (!images || images.length === 0) {
-        throw ImageMessageException.NoImagesFound();
+        this.logger.log(
+          `No images found for userId: ${userId}. Returning empty list.`
+        );
+        return [];
       }
-      this.logger.log(`Successfully retrieved ${images.length} images for userId: ${userId}`);
+      this.logger.log(
+        `Successfully retrieved ${images.length} images for userId: ${userId}`
+      );
       return images;
     } catch (error) {
-      this.logger.error(`Failed to retrieve images for userId: ${userId}`, error);
+      this.logger.error(
+        `Failed to retrieve images for userId: ${userId}`,
+        error
+      );
       throw ImageMessageException.DatabaseQueryFailed();
     }
   }
@@ -344,12 +398,16 @@ export class ImageService {
    * @throws UnauthorizedException - If the image does not belong to the user.
    * @throws InternalServerErrorException - If the S3 deletion or MongoDB operation fails.
    */
-  async deleteImageByQrCodeIdAndUserId(qrCodeId: string, userId: string): Promise<void> {
+  async deleteImageByQrCodeIdAndUserId(
+    qrCodeId: string,
+    userId: string
+  ): Promise<void> {
     if (!qrCodeId) {
       throw ImageMessageException.MissingQrCodeId();
     }
 
-    const imageMetadata = await this.imageModel.findOne({ qrCodeId }).exec();
+    const imageMetadata =
+      await this.imageRepository.findImageByQrCodeId(qrCodeId);
     if (!imageMetadata) {
       throw ImageMessageException.ImageMetadataNotFound(qrCodeId);
     }
@@ -376,19 +434,19 @@ export class ImageService {
       try {
         await this.localstackService.s3Client.send(deleteCommand);
         this.logger.log(
-            `Successfully deleted image from S3: ${imageMetadata.s3Key} for userId: ${userId}`
+          `Successfully deleted image from S3: ${imageMetadata.s3Key} for userId: ${userId}`
         );
         break;
       } catch (error) {
         attempts++;
         this.logger.warn(
-            `S3 DeleteObject Error (Attempt ${attempts}/${maxAttempts} for ${imageMetadata.s3Key}):`,
-            error
+          `S3 DeleteObject Error (Attempt ${attempts}/${maxAttempts} for ${imageMetadata.s3Key}):`,
+          error
         );
         if (attempts === maxAttempts) {
           this.logger.error(
-              `S3 DeleteObject Error after ${maxAttempts} retries:`,
-              error
+            `S3 DeleteObject Error after ${maxAttempts} retries:`,
+            error
           );
           throw ImageMessageException.S3DeletionFailed(imageMetadata.s3Key);
         }
@@ -397,12 +455,17 @@ export class ImageService {
     }
 
     try {
-      await this.imageModel.deleteOne({ qrCodeId, userId }).exec();
-      this.logger.log(`Successfully deleted image metadata for qrCodeId: ${qrCodeId} and userId: ${userId}`);
+      await this.imageRepository.deleteImageByQrCodeIdAndUserId(
+        qrCodeId,
+        userId
+      );
+      this.logger.log(
+        `Successfully deleted image metadata for qrCodeId: ${qrCodeId} and userId: ${userId}`
+      );
     } catch (error) {
       this.logger.error(
-          `Failed to delete image metadata for qrCodeId: ${qrCodeId} and userId: ${userId}`,
-          error
+        `Failed to delete image metadata for qrCodeId: ${qrCodeId} and userId: ${userId}`,
+        error
       );
       throw ImageMessageException.DatabaseOperationFailed();
     }

@@ -1,53 +1,77 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
-import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RolesGuardService } from '../services/role-guard.service';
 import { AuthController } from '../controllers/auth.controller';
 import { AuthService } from '../services/auth.service';
 import { JweService } from '../services/jwe.service';
-import { User, UserSchema } from '../../users/schemas/user.schema';
-import { RefreshToken, RefreshTokenSchema } from '../../users/schemas/refresh-token.schema';
 import { CsrfMiddleware } from '../middlewares/csrf.middleware';
+import { RegisterUserHandler } from '../application/handlers/register-user.handler';
+import { LoginUserHandler } from '../application/handlers/login-user.handler';
+import { UserRegisteredEventHandler } from '../application/handlers/user-registered-event.handler';
+import { AUTH_REPOSITORY } from '../domain/ports/auth-repository.port';
+import { PrismaAuthRepository } from '../infrastructure/repositories/prisma-auth.repository';
+import { AuthOutboxRepository } from '../infrastructure/outbox/auth-outbox.repository';
+
+const commandHandlers = [RegisterUserHandler, LoginUserHandler];
+const eventHandlers = [UserRegisteredEventHandler];
 
 /** Module for handling authentication-related functionality. */
 @Module({
   imports: [
-    /** Configures Mongoose schemas for User and RefreshToken. */
-    MongooseModule.forFeature([
-      { name: User.name, schema: UserSchema },
-      { name: RefreshToken.name, schema: RefreshTokenSchema },
-    ]),
     /** Configures JWT module with dynamic secret and expiration settings. */
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => {
+      useFactory: (configService: ConfigService) => {
         const secret = configService.get<string>('JWT_SECRET');
-        const expiresIn = configService.get<string>('JWT_EXPIRES_IN');
-        console.log('JwtModule.registerAsync: JWT_SECRET=', secret ? 'Set' : 'Missing');
-        console.log('JwtModule.registerAsync: JWT_EXPIRES_IN=', expiresIn || 'Missing');
-        if (!secret || !expiresIn) {
-          throw new Error('JWT_SECRET or JWT_EXPIRES_IN is missing');
+        const expiresInMs = configService.get<number>(
+          'JWT_EXPIRES_IN_MS',
+          15 * 60 * 1000
+        );
+
+        if (!secret) {
+          throw new Error('JWT_SECRET is missing');
         }
+
         return {
           secret,
-          signOptions: { expiresIn },
+          signOptions: {
+            expiresIn: Math.floor(expiresInMs / 1000),
+          },
         };
       },
       inject: [ConfigService],
     }),
     ConfigModule,
+    CqrsModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, RolesGuardService, JweService],
-  exports: [AuthService, RolesGuardService, JwtModule],
+  providers: [
+    AuthService,
+    RolesGuardService,
+    JweService,
+    AuthOutboxRepository,
+    {
+      provide: AUTH_REPOSITORY,
+      useClass: PrismaAuthRepository,
+    },
+    ...commandHandlers,
+    ...eventHandlers,
+  ],
+  exports: [AuthService, RolesGuardService, JwtModule, AuthOutboxRepository],
 })
 export class AuthModule implements NestModule {
   /** Configures CSRF middleware for specific authentication routes, excluding the check endpoint. */
   configure(consumer: MiddlewareConsumer) {
     consumer
-        .apply(CsrfMiddleware)
-        .exclude('auth/check')
-        .forRoutes('auth/register', 'auth/login', 'auth/logout', 'auth/password', 'auth/refresh', 'auth/csrf');
+      .apply(CsrfMiddleware)
+      .exclude('auth/check')
+      .forRoutes(
+        'auth/register',
+        'auth/login',
+        'auth/password',
+        'auth/csrf'
+      );
   }
 }

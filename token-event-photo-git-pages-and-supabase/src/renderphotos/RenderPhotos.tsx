@@ -6,7 +6,13 @@ import PreCaptureScreen from './components/PreCaptureScreen.tsx';
 import CountdownScreen from './components/CountdownScreen.tsx';
 import ReviewScreen from './components/ReviewScreen.tsx';
 import FinalScreen from './components/FinalScreen.tsx';
-import {uploadImage} from "../supabase/supabase-config.ts";
+import { useUploadImageMutation } from '../features/photo/api/photo-queries.ts';
+import { useAppDispatch } from '../app/store/hooks.ts';
+import {
+    resetFlow,
+    setQrCodeId as setQrCodeIdAction,
+    setStep as setStepAction,
+} from '../entities/booth/model/booth-slice.ts';
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
@@ -29,16 +35,19 @@ const RenderPhotos: React.FC = () => {
     const [countdown, setCountdown] = useState<number>(3);
     const [countdownActive, setCountdownActive] = useState<boolean>(false);
     const [qrCodeId, setQrCodeId] = useState<string>('');
+    const dispatch = useAppDispatch();
+    const uploadMutation = useUploadImageMutation();
 
     const startOver = useCallback(() => {
         setError(null);
         setPhoto(null);
         setIsLoading(false);
         setStep(1);
+        dispatch(resetFlow());
         setQrCodeId('');
         setCountdown(3);
         setCountdownActive(false);
-    }, []);
+    }, [dispatch]);
 
     const takePhoto = useCallback(async () => {
         if (!webcamRef.current || !canvasRef.current) {
@@ -88,18 +97,23 @@ const RenderPhotos: React.FC = () => {
 
             const newQrCodeId = uuidv4();
             setQrCodeId(newQrCodeId);
+            dispatch(setQrCodeIdAction(newQrCodeId));
 
             setIsLoading(false);
             setStep(4);
+            dispatch(setStepAction(4));
         } catch (err: any) {
             console.error('Error during image processing:', err);
             setError(err.message || 'An unknown error occurred.');
             setIsLoading(false);
             setStep(4);
         }
-    }, [startOver]);
+    }, [dispatch, startOver]);
 
     const startCapture = useCallback(() => setStep(2), []);
+    useEffect(() => {
+        dispatch(setStepAction(step));
+    }, [dispatch, step]);
 
     const capturePhoto = useCallback(() => {
         setError(null);
@@ -123,7 +137,7 @@ const RenderPhotos: React.FC = () => {
 
         setIsLoading(true);
         try {
-            const result = await uploadImage(qrCodeId, photo);
+            const result = await uploadMutation.mutateAsync({ qrCodeId, photo });
             if (!result) {
                 throw new Error('Failed to upload image to Supabase.');
             }
@@ -134,7 +148,7 @@ const RenderPhotos: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [photo, qrCodeId]);
+    }, [photo, qrCodeId, uploadMutation]);
 
     const renderContent = () => {
         if (error) {

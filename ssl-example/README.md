@@ -1,42 +1,40 @@
-# SSL Configuration Instructions
+# SSL Example
 
-## 🇧🇷 Instruções em Português
+## 🇧🇷 Português
 
-1. **Renomear pasta:**
-    - Renomeie a pasta `ssl-example` para `ssl`.
+Os certificados de teste deste diretório (`fake.txt` e `fake-key.txt`) são usados automaticamente pelo Docker Compose.
 
-2. **Renomear arquivos:**
-    - Dentro da nova pasta `ssl`, renomeie os arquivos:
-        - `fake.txt` → `fake.pem`
-        - `fake-key.txt` → `fake-key.pem`
+- No modo Docker, **não** é necessário renomear ou copiar arquivos manualmente.
+- O compose monta:
+  - `ssl-example/fake.txt` -> `nest-token-event-photo/ssl/fake.pem`
+  - `ssl-example/fake-key.txt` -> `nest-token-event-photo/ssl/fake-key.pem`
+  - `ssl-example/fake.txt` -> `react-token-event-photo/ssl/fake.pem`
+  - `ssl-example/fake-key.txt` -> `react-token-event-photo/ssl/fake-key.pem`
 
-3. **Copiar os arquivos `.pem`:**
-    - Copie os arquivos `fake.pem` e `fake-key.pem` da pasta `ssl` para os seguintes diretórios:
-        - `nest-token-event-photo/ssl`
-        - `react-token-event-photo/ssl`
+Se você executar sem Docker e quiser HTTPS local, copie manualmente:
 
-   > Caso a pasta `ssl` não exista nesses projetos, crie-a antes de colar os arquivos.
+- `ssl-example/fake.txt` para `nest-token-event-photo/ssl/fake.pem`
+- `ssl-example/fake-key.txt` para `nest-token-event-photo/ssl/fake-key.pem`
+- `ssl-example/fake.txt` para `react-token-event-photo/ssl/fake.pem`
+- `ssl-example/fake-key.txt` para `react-token-event-photo/ssl/fake-key.pem`
 
----
+## 🇺🇸 English
 
-## 🇺🇸 Instructions in English
+The test certificates from this directory (`fake.txt` and `fake-key.txt`) are automatically used by Docker Compose.
 
-1. **Rename the folder:**
-    - Rename the folder `ssl-example` to `ssl`.
+- In Docker mode, there is **no** need to rename or copy files manually.
+- Compose mounts:
+  - `ssl-example/fake.txt` -> `nest-token-event-photo/ssl/fake.pem`
+  - `ssl-example/fake-key.txt` -> `nest-token-event-photo/ssl/fake-key.pem`
+  - `ssl-example/fake.txt` -> `react-token-event-photo/ssl/fake.pem`
+  - `ssl-example/fake-key.txt` -> `react-token-event-photo/ssl/fake-key.pem`
 
-2. **Rename the files:**
-    - Inside the new `ssl` folder, rename the files:
-        - `fake.txt` → `fake.pem`
-        - `fake-key.txt` → `fake-key.pem`
+If you run without Docker and want local HTTPS, copy manually:
 
-3. **Copy the `.pem` files:**
-    - Copy the files `fake.pem` and `fake-key.pem` from the `ssl` folder into the following directories:
-        - `nest-token-event-photo/ssl`
-        - `react-token-event-photo/ssl`
+- `ssl-example/fake.txt` to `nest-token-event-photo/ssl/fake.pem`
+- `ssl-example/fake-key.txt` to `nest-token-event-photo/ssl/fake-key.pem`
+- `ssl-example/fake.txt` to `react-token-event-photo/ssl/fake.pem`
+- `ssl-example/fake-key.txt` to `react-token-event-photo/ssl/fake-key.pem`
 
-   > If the `ssl` folder doesn’t exist in these projects, create it before pasting the files.
-
----
-
-   <img src="https://github.com/Vidigal-code/token-event-challenge/blob/main/ssl-example/example-ssl-add-test.png?raw=true" alt="" width="800"/> 
+<img src="https://github.com/Vidigal-code/token-event-challenge/blob/main/ssl-example/example-ssl-add-test.png?raw=true" alt="" width="800"/>
 

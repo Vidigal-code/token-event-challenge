@@ -3,10 +3,15 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { CqrsModule } from '@nestjs/cqrs';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AuthModule } from './auth/modules/auth.module';
 import { ImageModule } from './image/modules/image.module';
 import { SanitizeInputInterceptor } from './auth/interceptors/sanitize-input.interceptor';
 import * as path from 'path';
+import { PrismaModule } from './shared/infrastructure/prisma/prisma.module';
+import { OutboxProcessorService } from './shared/infrastructure/outbox/outbox-processor.service';
+import { LogOutboxPublisher } from './shared/infrastructure/outbox/log-outbox.publisher';
 
 /**
  * The root module of the application.
@@ -27,6 +32,9 @@ import * as path from 'path';
       isGlobal: true,
       envFilePath: path.resolve(process.cwd(), '.env'),
     }),
+    PrismaModule,
+    CqrsModule.forRoot(),
+    EventEmitterModule.forRoot(),
 
     /**
      * Configures and connects to MongoDB using environment variables.
@@ -49,8 +57,14 @@ import * as path from 'path';
         throttlers: [
           {
             name: 'default',
-            ttl: parseInt(configService.get<string>('THROTTLE_TTL_SECONDS', '60'), 10),
-            limit: parseInt(configService.get<string>('THROTTLE_LIMIT', '100'), 10),
+            ttl: parseInt(
+              configService.get<string>('THROTTLE_TTL_SECONDS', '60'),
+              10
+            ),
+            limit: parseInt(
+              configService.get<string>('THROTTLE_LIMIT', '100'),
+              10
+            ),
           },
         ],
       }),
@@ -70,6 +84,8 @@ import * as path from 'path';
       provide: APP_INTERCEPTOR,
       useClass: SanitizeInputInterceptor,
     },
+    LogOutboxPublisher,
+    OutboxProcessorService,
   ],
 })
 export class AppModule {}

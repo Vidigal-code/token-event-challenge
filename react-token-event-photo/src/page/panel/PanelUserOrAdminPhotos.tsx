@@ -1,13 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { VITE_API_BACK_END } from '../../api/api.ts';
-import type { AuthState, CsrfResponse } from '../login/interface-login.ts';
-import type {DeleteResponse, ImageResponse, Image } from './interface-panel.ts';
+import type { Image } from './interface-panel.ts';
 import { FaRegTrashAlt } from "react-icons/fa";
 import { HiMiniViewfinderCircle } from "react-icons/hi2";
 import { IoMdExit } from "react-icons/io";
 import { IoExitOutline } from 'react-icons/io5';
+import { useAppDispatch, useAppSelector } from '../../app/store/hooks.ts';
+import { logoutSession } from '../../entities/auth/model/auth-slice.ts';
+import {
+    useAuthSyncHealthQuery,
+    useLogoutMutation
+} from '../../features/auth/api/auth-queries.ts';
+import { useDeleteImageMutation, useImagesQuery } from '../../features/panel/api/panel-queries.ts';
+import { useQueryClient } from '@tanstack/react-query';
 
 
 /**
@@ -28,119 +33,26 @@ import { IoExitOutline } from 'react-icons/io5';
  * Uses axios for HTTP requests with credentials.
  */
 const PanelUserOrAdminPhotos: React.FC = () => {
-
-    /**
-     * Authentication state containing whether the user is authenticated and their ID.
-     */
-    const [authState, setAuthState] = useState<AuthState>({ authenticated: false, id: '0' });
-
-    /**
-     * State holding the array of images fetched from the backend.
-     */
-    const [images, setImages] = useState<Image[]>([]);
-
-    /**
-     * CSRF token state for securing requests.
-     */
-    const [csrfToken, setCsrfToken] = useState<string | null>(null);
-
     /**
      * Holds error messages to display to the user.
      */
     const [error, setError] = useState<string | null>(null);
 
-    /**
-     * Loading state for indicating ongoing network requests.
-     */
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-
-    /**
-     * Boolean flag indicating if the authenticated user is an admin.
-     */
-    const [isAdmin, setIsAdmin] = useState<boolean>(false);
-
     const navigate = useNavigate();
-
-    /**
-     * Fetches a CSRF token from the backend and sets it in state.
-     * Handles errors if fetching fails.
-     */
-    const fetchCsrfToken = useCallback(() => {
-        axios
-            .get<CsrfResponse>(`${VITE_API_BACK_END}/auth/csrf`, { withCredentials: true })
-            .then((response) => {
-                setCsrfToken(response.data.csrfToken);
-            })
-            .catch((error) => {
-                console.error('Error fetching CSRF token:', error);
-                setError('Failed to initialize CSRF protection. Please try again.');
-            });
-    }, []);
-
-    /**
-     * Checks the current authentication status of the user.
-     * Redirects to login page if not authenticated.
-     * Handles errors by setting error state and redirecting.
-     */
-    const checkAuth = useCallback(() => {
-        axios
-            .get<AuthState>(`${VITE_API_BACK_END}/auth/check`, { withCredentials: true })
-            .then((response) => {
-                setAuthState(response.data);
-                if (!response.data.authenticated) {
-                    navigate('/login');
-                }
-            })
-            .catch((error) => {
-                console.error('Error checking auth:', error);
-                setError('Authentication check failed. Please log in.');
-                navigate('/login');
-            });
-    }, [navigate]);
-
-    /**
-     * Fetches images from the backend.
-     * Attempts to fetch all images if user is admin,
-     * otherwise fetches only user-specific images.
-     * Handles loading state and errors.
-     */
-    const fetchImages = useCallback(() => {
-        setIsLoading(true);
-        setError(null);
-
-        axios
-            .get<ImageResponse>(`${VITE_API_BACK_END}/image/all`, { withCredentials: true })
-            .then((response) => {
-                setImages(response.data.images);
-                setIsAdmin(true);
-                setIsLoading(false);
-            })
-            .catch((error) => {
-                if (error.response?.status === 403) {
-                    // Not an admin, fetch user images instead
-                    axios
-                        .get<ImageResponse>(`${VITE_API_BACK_END}/image/user`, { withCredentials: true })
-                        .then((response) => {
-                            setImages(response.data.images);
-                            setIsAdmin(false);
-                            setIsLoading(false);
-                        })
-                        .catch((userError) => {
-                            console.error('Error fetching user images:', userError);
-                            const message =
-                                userError.response?.data?.message || 'Failed to load your images. Please try again.';
-                            setError(message);
-                            setIsLoading(false);
-                        });
-                } else {
-                    console.error('Error fetching all images:', error);
-                    const message =
-                        error.response?.data?.message || 'Failed to load images. Please try again.';
-                    setError(message);
-                    setIsLoading(false);
-                }
-            });
-    }, []);
+    const dispatch = useAppDispatch();
+    const auth = useAppSelector((state) => state.auth);
+    const queryClient = useQueryClient();
+    const syncHealthQuery = useAuthSyncHealthQuery(auth.authenticated);
+    const logoutMutation = useLogoutMutation();
+    const imagesQuery = useImagesQuery(auth.authenticated, auth.user?.id ?? null);
+    const isAdmin = imagesQuery.data?.isAdmin ?? false;
+    const images: Image[] = imagesQuery.data?.images ?? [];
+    const deleteMutation = useDeleteImageMutation(isAdmin);
+    const isLoading =
+        !auth.initialized ||
+        imagesQuery.isLoading ||
+        logoutMutation.isPending ||
+        deleteMutation.isPending;
 
     /**
      * Handles deleting an image by its QR code ID.
@@ -151,40 +63,30 @@ const PanelUserOrAdminPhotos: React.FC = () => {
      */
     const handleDelete = useCallback(
         (qrCodeId: string) => {
-            if (!csrfToken) {
+            if (!auth.csrfToken) {
                 setError('CSRF token is missing. Please refresh the page.');
                 return;
             }
-            setIsLoading(true);
             setError(null);
 
-            const endpoint = isAdmin
-                ? `${VITE_API_BACK_END}/image/qr/${qrCodeId}`
-                : `${VITE_API_BACK_END}/image/user/qr/${qrCodeId}`;
-
-            axios
-                .delete<DeleteResponse>(endpoint, {
-                    headers: {
-                        'X-CSRF-Token': csrfToken,
+            deleteMutation.mutate(
+                { qrCodeId, csrfToken: auth.csrfToken },
+                {
+                    onSuccess: () => {
+                        queryClient.invalidateQueries({ queryKey: ['panel', 'images'] });
                     },
-                    withCredentials: true,
-                })
-                .then(() => {
-                    setImages((prev) => prev.filter((image) => image.qrCodeId !== qrCodeId));
-                })
-                .catch((error) => {
-                    const message =
-                        error.response?.data?.message ||
-                        error.message ||
-                        'Failed to delete image.';
-                    console.error('Delete error:', message);
-                    setError(message);
-                })
-                .finally(() => {
-                    setIsLoading(false);
-                });
+                    onError: (error: any) => {
+                        const message =
+                            error.response?.data?.message ||
+                            error.message ||
+                            'Failed to delete image.';
+                        console.error('Delete error:', message);
+                        setError(message);
+                    },
+                }
+            );
         },
-        [csrfToken, isAdmin]
+        [auth.csrfToken, deleteMutation, queryClient]
     );
 
     /**
@@ -193,54 +95,49 @@ const PanelUserOrAdminPhotos: React.FC = () => {
      * Handles errors and loading state.
      */
     const handleLogout = useCallback(() => {
-        if (!csrfToken) {
-            setError('CSRF token is missing. Please refresh the page.');
-            return;
-        }
-
-        setIsLoading(true);
         setError(null);
 
-        axios
-            .post(
-                `${VITE_API_BACK_END}/auth/logout`,
-                {},
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-Token': csrfToken,
-                    },
-                    withCredentials: true,
-                }
-            )
-            .then(() => {
-                setAuthState({ authenticated: false, id: '0' });
-                setCsrfToken(null);
+        logoutMutation.mutate(auth.csrfToken ?? null, {
+            onSuccess: async () => {
+                dispatch(logoutSession());
+                queryClient.setQueryData(['auth', 'check'], {
+                    authenticated: false,
+                    id: '0',
+                });
+                queryClient.setQueryData(['auth', 'sync-health'], {
+                    authenticated: false,
+                    id: '0',
+                    role: 'unknown',
+                    hasAccessTokenCookie: false,
+                    hasRefreshTokenCookie: false,
+                    hasCsrfCookie: false,
+                    synced: false,
+                });
+                queryClient.removeQueries({ queryKey: ['panel', 'images'] });
+                queryClient.invalidateQueries({ queryKey: ['auth', 'csrf'] });
+                await queryClient.refetchQueries({ queryKey: ['auth', 'csrf'] });
                 navigate('/');
-            })
-            .catch((error) => {
+            },
+            onError: (error: any) => {
                 const message =
                     error.response?.data?.message || error.message || 'Logout failed. Please try again.';
                 console.error('Logout error:', message);
                 setError(message);
-            })
-            .finally(() => {
-                setIsLoading(false);
-            });
-    }, [csrfToken, navigate]);
+            },
+        });
+    }, [auth.csrfToken, navigate, dispatch, logoutMutation, queryClient]);
 
-    /**
-     * On component mount and when dependencies change,
-     * perform authentication check, fetch CSRF token,
-     * and if authenticated, fetch images.
-     */
     useEffect(() => {
-        checkAuth();
-        fetchCsrfToken();
-        if (authState.authenticated) {
-            fetchImages();
+        if (auth.initialized && !auth.authenticated) {
+            navigate('/login');
         }
-    }, [checkAuth, fetchCsrfToken, fetchImages, authState.authenticated]);
+    }, [auth.initialized, auth.authenticated, navigate]);
+
+    useEffect(() => {
+        if (imagesQuery.error) {
+            setError('Failed to load images. Please try again.');
+        }
+    }, [imagesQuery.error]);
 
 
 
@@ -255,7 +152,9 @@ const PanelUserOrAdminPhotos: React.FC = () => {
                     </h2>
                     <div className="flex justify-center gap-4 mb-4">
                         <button
-                            onClick={() => navigate('/')}
+                            onClick={() => {
+                                navigate('/');
+                            }}
                             className="flex items-center text-black hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Return"
                             disabled={isLoading}
@@ -267,7 +166,7 @@ const PanelUserOrAdminPhotos: React.FC = () => {
                             onClick={handleLogout}
                             className="flex items-center text-black hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Logout"
-                            disabled={isLoading || !csrfToken}
+                            disabled={isLoading}
                         >
                             <span>Logout</span>
                             <IoMdExit className="w-5 h-5 ml-2" />
@@ -276,6 +175,11 @@ const PanelUserOrAdminPhotos: React.FC = () => {
                     {error && (
                         <div className="w-full bg-red-100 text-red-700 p-4 rounded-lg mb-6 text-center">
                             {error}
+                        </div>
+                    )}
+                    {syncHealthQuery.data && !syncHealthQuery.data.synced && (
+                        <div className="w-full bg-yellow-100 text-yellow-700 p-4 rounded-lg mb-6 text-center">
+                            Session is out of sync. Please refresh or login again.
                         </div>
                     )}
                     {isLoading ? (
@@ -331,7 +235,9 @@ const PanelUserOrAdminPhotos: React.FC = () => {
                                         <td className="px-4 py-2 border-b text-gray-700">{image.userId}</td>
                                         <td className="px-4 py-2 border-b">
                                             <button
-                                                onClick={() => handleDelete(image.qrCodeId)}
+                                                onClick={() => {
+                                                    handleDelete(image.qrCodeId);
+                                                }}
                                                 className="text-red-600 hover:text-red-800"
                                                 title="Delete"
                                                 disabled={isLoading}
@@ -341,7 +247,9 @@ const PanelUserOrAdminPhotos: React.FC = () => {
                                         </td>
                                         <td className="px-4 py-2 border-b">
                                             <button
-                                                onClick={() => navigate(`/preview?qrCodeId=${image.qrCodeId}`)}
+                                                onClick={() => {
+                                                    navigate(`/preview?qrCodeId=${image.qrCodeId}`);
+                                                }}
                                                 className="text-blue-600 hover:text-red-800"
                                                 title="View"
                                                 disabled={isLoading}

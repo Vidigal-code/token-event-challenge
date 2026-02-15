@@ -28,6 +28,9 @@ import { LoginDto } from '../../users/dtos/login.dto';
 import { UpdatePasswordDto } from '../../users/dtos/update-password.dto';
 import { AuthMessageSuccess } from '../message/sucess/auth-message.sucess';
 import { CsrfMiddlewareError } from '../middlewares/csrf.middleware-message';
+import { CommandBus } from '@nestjs/cqrs';
+import { RegisterUserCommand } from '../application/commands/register-user.command';
+import { LoginUserCommand } from '../application/commands/login-user.command';
 
 /** Controller for handling authentication-related endpoints. */
 @Controller('auth')
@@ -37,30 +40,32 @@ export class AuthController {
 
   /** Initializes the controller with AuthService and ConfigService dependencies. */
   constructor(
-      private authService: AuthService,
-      private configService: ConfigService
+    private authService: AuthService,
+    private configService: ConfigService,
+    private commandBus: CommandBus
   ) {}
 
   /** Handles user registration, creates a new user, sets tokens, and returns user details. */
   @Post('register')
   @Throttle({ default: { limit: 5, ttl: 300 } })
   async register(
-      @Body() registerDto: RegisterDto,
-      @Req() req: Request,
-      @Res({ passthrough: true }) res: Response
+    @Body() registerDto: RegisterDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response
   ) {
-    const { accessToken, refreshToken, user } =
-        await this.authService.createUser(
-            registerDto.name,
-            registerDto.email,
-            registerDto.password
-        );
+    const { accessToken, refreshToken, user } = await this.commandBus.execute(
+      new RegisterUserCommand(
+        registerDto.name,
+        registerDto.email,
+        registerDto.password
+      )
+    );
 
     this.setTokens(res, accessToken, refreshToken);
 
     return {
       ...AuthMessageSuccess.UserRegistered(),
-      user: { id: user._id.toString(), email: user.email, role: user.role },
+      user: { id: user.id, email: user.email, role: user.role },
       csrfToken: res.locals.csrfToken,
     };
   }
@@ -70,20 +75,19 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 300 } })
   async login(
-      @Body() loginDto: LoginDto,
-      @Req() req: Request,
-      @Res({ passthrough: true }) res: Response
+    @Body() loginDto: LoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response
   ) {
-    const { accessToken, refreshToken, user } = await this.authService.login(
-        loginDto.email,
-        loginDto.password
+    const { accessToken, refreshToken, user } = await this.commandBus.execute(
+      new LoginUserCommand(loginDto.email, loginDto.password)
     );
 
     this.setTokens(res, accessToken, refreshToken);
 
     return {
       ...AuthMessageSuccess.LoginSuccessful(),
-      user: { id: user._id.toString(), email: user.email, role: user.role },
+      user: { id: user.id, email: user.email, role: user.role },
       csrfToken: res.locals.csrfToken,
     };
   }
@@ -93,8 +97,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60 } })
   async refresh(
-      @Req() req: Request,
-      @Res({ passthrough: true }) res: Response
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response
   ) {
     const refreshToken = req.cookies?.refreshToken ?? null;
 
@@ -102,7 +106,8 @@ export class AuthController {
       throw AuthMessageErrors.NoTokenProvided();
     }
 
-    const { accessToken, refreshToken: newRefreshToken } = await this.authService.refreshToken(refreshToken);
+    const { accessToken, refreshToken: newRefreshToken } =
+      await this.authService.refreshToken(refreshToken);
 
     this.setTokens(res, accessToken, newRefreshToken);
 
@@ -146,14 +151,14 @@ export class AuthController {
   @UseGuards(RolesGuardService)
   @Throttle({ default: { limit: 3, ttl: 300 } })
   async updatePassword(
-      @Req() req: AuthenticatedRequest,
-      @Body() updatePasswordDto: UpdatePasswordDto,
-      @Res({ passthrough: true }) res: Response
+    @Req() req: AuthenticatedRequest,
+    @Body() updatePasswordDto: UpdatePasswordDto,
+    @Res({ passthrough: true }) res: Response
   ) {
     await this.authService.updatePassword(
-        req.user.sub,
-        updatePasswordDto.oldPassword,
-        updatePasswordDto.newPassword
+      req.user.sub,
+      updatePasswordDto.oldPassword,
+      updatePasswordDto.newPassword
     );
 
     const isProduction = this.configService.get('NODE_ENV') === 'production';
@@ -166,7 +171,9 @@ export class AuthController {
         partitioned: isProduction,
       });
     } else {
-      this.logger.warn('CSRF token not available in res.locals for password update');
+      this.logger.warn(
+        'CSRF token not available in res.locals for password update'
+      );
     }
 
     return AuthMessageSuccess.PasswordUpdated();
@@ -195,15 +202,44 @@ export class AuthController {
     };
   }
 
+  /** Health endpoint to validate frontend/backend auth synchronization state. */
+  @Get('sync-health')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 20, ttl: 60 } })
+  @UseGuards(RolesGuardService)
+  async syncHealth(@Req() req: AuthenticatedRequest) {
+    return {
+      authenticated: !!req.user,
+      id: req.user?.sub ?? '0',
+      role: req.user?.role ?? 'unknown',
+      hasAccessTokenCookie: Boolean(req.cookies?.accessToken),
+      hasRefreshTokenCookie: Boolean(req.cookies?.refreshToken),
+      hasCsrfCookie: Boolean(req.cookies?.csrfToken),
+      synced:
+        Boolean(req.user) &&
+        Boolean(req.cookies?.accessToken) &&
+        Boolean(req.cookies?.refreshToken) &&
+        Boolean(req.cookies?.csrfToken),
+    };
+  }
+
   /** Generates and returns a CSRF token, setting it in cookies. */
   @Get('csrf')
   @HttpCode(HttpStatus.OK)
-  generateCsrfToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  generateCsrfToken(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response
+  ) {
     const csrfToken = res.locals.csrfToken;
     const isProduction = this.configService.get('NODE_ENV') === 'production';
     if (!csrfToken) {
-      this.logger.error(`CSRF token not found in res.locals; cookies: ${JSON.stringify(req.cookies)}`);
-      throw new CsrfMiddlewareError('CSRF token generation failed', HttpStatus.INTERNAL_SERVER_ERROR);
+      this.logger.error(
+        `CSRF token not found in res.locals; cookies: ${JSON.stringify(req.cookies)}`
+      );
+      throw new CsrfMiddlewareError(
+        'CSRF token generation failed',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
     res.cookie('csrfToken', csrfToken, {
       httpOnly: false,
@@ -219,19 +255,19 @@ export class AuthController {
   private setTokens(res: Response, accessToken: string, refreshToken: string) {
     const isProduction = this.configService.get('NODE_ENV') === 'production';
     const accessTokenExpiry =
-        this.configService.get<number>('JWT_EXPIRES_IN_MS');
+      this.configService.get<number>('JWT_EXPIRES_IN_MS');
     const refreshTokenExpiry = this.configService.get<number>(
-        'REFRESH_TOKEN_EXPIRES_IN_MS'
+      'REFRESH_TOKEN_EXPIRES_IN_MS'
     );
 
     AuthCookieUtils.clearTokensInCookies(res, isProduction);
     AuthCookieUtils.setTokensInCookies(
-        res,
-        accessToken,
-        refreshToken,
-        isProduction,
-        accessTokenExpiry,
-        refreshTokenExpiry
+      res,
+      accessToken,
+      refreshToken,
+      isProduction,
+      accessTokenExpiry,
+      refreshTokenExpiry
     );
 
     if (res.locals.csrfToken) {
