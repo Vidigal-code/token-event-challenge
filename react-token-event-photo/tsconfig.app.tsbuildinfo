@@ -1,1 +1,32 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/api/api.ts","./src/app/providers/auth-bootstrap.tsx","./src/app/providers/query-client.ts","./src/app/store/hooks.ts","./src/app/store/store.ts","./src/entities/auth/model/auth-slice.ts","./src/features/auth/api/auth-queries.ts","./src/features/panel/api/panel-queries.ts","./src/page/login/loginphotos.tsx","./src/page/login/interface-login.ts","./src/page/panel/paneluseroradminphotos.tsx","./src/page/panel/interface-panel.ts","./src/page/register/registerphotos.tsx","./src/renderphotos/renderphotos.tsx","./src/renderphotos/components/countdownscreen.tsx","./src/renderphotos/components/finalscreen.tsx","./src/renderphotos/components/initialscreen.tsx","./src/renderphotos/components/precapturescreen.tsx","./src/renderphotos/components/reviewscreen.tsx","./src/renderphotos/components/vidigalcode.tsx","./src/renderpreview/renderpreview.tsx","./src/renderpreview/interface-render-preview.ts","./src/shared/api/config.ts","./src/shared/api/http-client.ts"],"version":"5.9.3"}
+{
+    "root": [
+        "./src/app.tsx",
+        "./src/main.tsx",
+        "./src/vite-env.d.ts",
+        "./src/api/api.ts",
+        "./src/app/providers/auth-bootstrap.tsx",
+        "./src/app/providers/query-client.ts",
+        "./src/app/store/hooks.ts",
+        "./src/app/store/store.ts",
+        "./src/entities/auth/model/auth-slice.ts",
+        "./src/features/auth/api/auth-queries.ts",
+        "./src/features/panel/api/panel-queries.ts",
+        "./src/page/login/loginphotos.tsx",
+        "./src/page/login/interface-login.ts",
+        "./src/page/panel/paneluseroradminphotos.tsx",
+        "./src/page/panel/interface-panel.ts",
+        "./src/page/register/registerphotos.tsx",
+        "./src/renderphotos/renderphotos.tsx",
+        "./src/renderphotos/components/countdownscreen.tsx",
+        "./src/renderphotos/components/finalscreen.tsx",
+        "./src/renderphotos/components/initialscreen.tsx",
+        "./src/renderphotos/components/precapturescreen.tsx",
+        "./src/renderphotos/components/reviewscreen.tsx",
+        "./src/renderphotos/components/vidigalcode.tsx",
+        "./src/renderpreview/renderpreview.tsx",
+        "./src/renderpreview/interface-render-preview.ts",
+        "./src/shared/api/config.ts",
+        "./src/shared/api/http-client.ts"
+    ],
+    "version": "5.9.3"
+}
