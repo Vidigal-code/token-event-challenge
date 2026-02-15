@@ -1,5 +1,8 @@
 # React Photo Booth App
 
+> **Note:** This is the **Serverless Variant** of the [event-token-photo Monorepo](../README.md). It runs entirely on the client-side (GitHub Pages) and uses [Supabase](https://supabase.com/) for backend services.
+
+
 <p align="center">
   <img alt="React" src="https://img.shields.io/badge/React-19.1.0-blue?style=for-the-badge&logo=react">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.8.3-blue?style=for-the-badge&logo=typescript">

@@ -1,5 +1,8 @@
 # React Photo Booth Event App / Aplicação de Cabine de Fotos para Eventos
 
+> **Note:** This is the **Frontend** component of the **Full-Stack Variant** of the [event-token-photo Monorepo](../README.md). It is designed to work with the [NestJS Backend](../nest-token-event-photo/README.md).
+
+
 This project is a fully interactive photo booth application designed for events. It includes a user-facing photo capture
 flow and a secure, role-based admin panel for photo management.
 

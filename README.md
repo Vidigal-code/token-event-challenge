@@ -1,4 +1,5 @@
-# Interactive Photo Booth (React + NestJS)
+# event-token-photo (Monorepo)
+
 
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![NestJS](https://img.shields.io/badge/nestjs-%23E0234E.svg?style=for-the-badge&logo=nestjs&logoColor=white)
@@ -8,6 +9,11 @@
 ![S3](https://img.shields.io/badge/S3-569A31?style=for-the-badge&logo=amazon-s3&logoColor=white)
 
 An interactive and secure photo booth application developed for events. It allows participants to take photos, apply a custom frame, and download them via a QR code. The project includes a complete backend with robust security features and an administrative panel for photo management.
+
+This repository contains two distinct implementations of the photo booth application:
+
+1.  **Full-Stack (Docker + NestJS)**: A complete solution with a dedicated backend, database, and object storage. Ideal for controlled environments requiring full data sovereignty.
+2.  **Serverless (React + Supabase)**: A lightweight, cloud-native version hosted on GitHub Pages, using Supabase for backend services (Auth, Storage). Ideal for quick deployment and lower maintenance.
 
 
 ## Quick Start (Docker + SSL Example)
@@ -320,7 +326,28 @@ As principais rotas da API são:
     - `DELETE /qr/:qrCodeId`: Deleta uma foto (Apenas Admin).
     - `DELETE /user/qr/:qrCodeId`: Deleta uma foto pertencente ao usuário autenticado.
 
+### Endpoints da API
+
+As principais rotas da API são:
+
+- **Autenticação (`/auth`)**:
+    ... (veja a documentação completa no diretório `nest-token-event-photo`)
+
 </details>
+
+---
+
+## 🚀 Serverless Variant (Supabase + GitHub Pages)
+
+For a simpler deployment without managing Docker containers, check out the **Serverless Variant**.
+
+- **Directory**: [`token-event-photo-git-pages-and-supabase`](./token-event-photo-git-pages-and-supabase)
+- **Features**: React, Vite, Tailwind CSS, Supabase (Auth + Storage).
+- **Deployment**: Configured for GitHub Pages.
+
+[**» Go to Serverless Version Documentation**](./token-event-photo-git-pages-and-supabase/README.md)
+
+---
 
 # Docker Example / Exemplo
 

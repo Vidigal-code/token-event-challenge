@@ -1,5 +1,8 @@
 # NestJS API: Authentication & S3 Image Uploads
 
+> **Note:** This is the **Backend** component of the **Full-Stack Variant** of the [event-token-photo Monorepo](../README.md). It is designed to work with the [React Frontend](../react-token-event-photo/README.md).
+
+
 <p align="center">
   <img src="https://img.shields.io/badge/nestjs-%23E0234E.svg?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS">
   <img src="https://img.shields.io/badge/MongoDB-%2347A248.svg?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB">
