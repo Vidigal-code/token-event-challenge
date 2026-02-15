@@ -24,6 +24,8 @@ dist-ssr
 *.sw?
 pnpm-lock.yaml
 
+
+.env
 ssl/fake-key.pem
 ssl/fake.pem
-.env
+ssl/.gitkeep
